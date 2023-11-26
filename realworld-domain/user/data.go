@@ -20,3 +20,11 @@ type Registration struct {
 	Email    string
 	Password string
 }
+
+type ValidRegistration struct {
+	Id                Id
+	Email             string
+	Token             string
+	Username          string
+	EncryptedPassword string
+}

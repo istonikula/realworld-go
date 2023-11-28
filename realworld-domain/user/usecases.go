@@ -16,7 +16,7 @@ type RegisterUseCase struct {
 	CreateUser CreateUser
 }
 
-func (u *RegisterUseCase) Run(r *Registration) (*User, error) {
+func (u RegisterUseCase) Run(r *Registration) (*User, error) {
 	valid, err := u.Validate(r)
 	if err != nil {
 		return nil, err

@@ -16,42 +16,38 @@ func TestRegisterUseCase(t *testing.T) {
 	reg := jane.Registration()
 
 	t.Run("register", func(t *testing.T) {
-		uc := RegisterUseCase{
+		act, err := RegisterUseCase{
 			Validate:   stub.UserStub.ValidateUser(userFactory.ValidRegistration),
 			CreateUser: stub.UserStub.CreateUser,
-		}
-		act, err := uc.Run(reg)
+		}.Run(reg)
 		rwt.Ok(t, err)
 		rwt.Equals(t, jane.Email, act.Email)
 		rwt.Equals(t, jane.Username, act.Username)
 	})
 
 	t.Run("email already taken", func(t *testing.T) {
-		uc := RegisterUseCase{
+		_, err := RegisterUseCase{
 			Validate:   stub.UserStub.ValidateUserError(EmailAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
-		}
-		_, err := uc.Run(reg)
+		}.Run(reg)
 		rwt.Assert(t, err != nil, "error expected")
 		rwt.Equals(t, EmailAlreadyTaken, err)
 	})
 
 	t.Run("username already taken", func(t *testing.T) {
-		uc := RegisterUseCase{
+		_, err := RegisterUseCase{
 			Validate:   stub.UserStub.ValidateUserError(UsernameAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
-		}
-		_, err := uc.Run(reg)
+		}.Run(reg)
 		rwt.Assert(t, err != nil, "error expected")
 		rwt.Equals(t, UsernameAlreadyTaken, err)
 	})
 
 	t.Run("create failure", func(t *testing.T) {
-		uc := RegisterUseCase{
+		_, err := RegisterUseCase{
 			Validate:   stub.UserStub.ValidateUser(userFactory.ValidRegistration),
 			CreateUser: stub.UserStub.CreateUserError,
-		}
-		_, err := uc.Run(reg)
+		}.Run(reg)
 		rwt.Assert(t, err != nil, "error expected")
 		rwt.Equals(t, "unexpected error", err.Error())
 	})

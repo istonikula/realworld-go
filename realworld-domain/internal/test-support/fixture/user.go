@@ -2,20 +2,19 @@ package fixture
 
 import (
 	"fmt"
-
-	"github.com/istonikula/realworld-go/realworld-domain/user"
+	"github.com/istonikula/realworld-go/realworld-domain"
 )
 
 type UserFactory struct {
-	Auth user.Auth
+	Auth domain.Auth
 }
 
-func (f UserFactory) NewUser(username string, id ...user.Id) *user.User {
-	userId := user.NewId()
+func (f UserFactory) NewUser(username string, id ...domain.UserId) *domain.User {
+	userId := domain.NewUserId()
 	if len(id) == 1 {
 		userId = id[0]
 	}
-	return &user.User{
+	return &domain.User{
 		Id:       userId,
 		Email:    fmt.Sprintf("%s@realwold.io", username),
 		Token:    "",
@@ -23,10 +22,10 @@ func (f UserFactory) NewUser(username string, id ...user.Id) *user.User {
 	}
 }
 
-func (f UserFactory) ValidRegistration(r *user.Registration) *user.ValidRegistration {
-	id := user.NewId()
+func (f UserFactory) ValidRegistration(r *domain.UserRegistration) *domain.ValidUserRegistration {
+	id := domain.NewUserId()
 
-	return &user.ValidRegistration{
+	return &domain.ValidUserRegistration{
 		Id:                id,
 		Email:             r.Email,
 		Username:          r.Username,
@@ -35,8 +34,8 @@ func (f UserFactory) ValidRegistration(r *user.Registration) *user.ValidRegistra
 	}
 }
 
-type TestUser user.User
+type TestUser domain.User
 
-func (u *TestUser) Registration() *user.Registration {
-	return &user.Registration{Username: u.Username, Email: u.Email, Password: "plain"}
+func (u *TestUser) Registration() *domain.UserRegistration {
+	return &domain.UserRegistration{Username: u.Username, Email: u.Email, Password: "plain"}
 }

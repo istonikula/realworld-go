@@ -2,37 +2,36 @@ package stub
 
 import (
 	"errors"
-	domain "github.com/istonikula/realworld-go/realworld-domain"
-	"github.com/istonikula/realworld-go/realworld-domain/user"
+	"github.com/istonikula/realworld-go/realworld-domain"
 )
 
 var UserStub = struct {
-	Auth                 user.Auth
-	CreateUser           user.CreateUser
-	CreateUserError      user.CreateUser
-	UnexpectedCreateUser user.CreateUser
-	ValidateUser         func(func(*user.Registration) *user.ValidRegistration) user.ValidateRegistration
-	ValidateUserError    func(*user.RegistrationError) user.ValidateRegistration
+	Auth                 domain.Auth
+	CreateUser           domain.CreateUser
+	CreateUserError      domain.CreateUser
+	UnexpectedCreateUser domain.CreateUser
+	ValidateUser         func(func(*domain.UserRegistration) *domain.ValidUserRegistration) domain.ValidateUserRegistration
+	ValidateUserError    func(*domain.UserRegistrationError) domain.ValidateUserRegistration
 }{
-	Auth: user.Auth{Settings: domain.Security{TokenSecret: ""}},
+	Auth: domain.Auth{Settings: domain.Security{TokenSecret: ""}},
 
-	CreateUser: func(r *user.ValidRegistration) (*user.User, error) {
-		return &user.User{Id: user.NewId(), Email: r.Email, Token: r.Token, Username: r.Username}, nil
+	CreateUser: func(r *domain.ValidUserRegistration) (*domain.User, error) {
+		return &domain.User{Id: domain.NewUserId(), Email: r.Email, Token: r.Token, Username: r.Username}, nil
 	},
-	CreateUserError: func(*user.ValidRegistration) (*user.User, error) {
+	CreateUserError: func(*domain.ValidUserRegistration) (*domain.User, error) {
 		return nil, errors.New("unexpected error")
 	},
-	UnexpectedCreateUser: func(*user.ValidRegistration) (*user.User, error) {
+	UnexpectedCreateUser: func(*domain.ValidUserRegistration) (*domain.User, error) {
 		panic("unexpected create user")
 	},
 
-	ValidateUser: func(f func(*user.Registration) *user.ValidRegistration) user.ValidateRegistration {
-		return func(r *user.Registration) (*user.ValidRegistration, error) {
+	ValidateUser: func(f func(*domain.UserRegistration) *domain.ValidUserRegistration) domain.ValidateUserRegistration {
+		return func(r *domain.UserRegistration) (*domain.ValidUserRegistration, error) {
 			return f(r), nil
 		}
 	},
-	ValidateUserError: func(e *user.RegistrationError) user.ValidateRegistration {
-		return func(*user.Registration) (*user.ValidRegistration, error) {
+	ValidateUserError: func(e *domain.UserRegistrationError) domain.ValidateUserRegistration {
+		return func(*domain.UserRegistration) (*domain.ValidUserRegistration, error) {
 			return nil, e
 		}
 	},

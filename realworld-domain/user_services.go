@@ -1,12 +1,12 @@
-package user
+package domain
 
-type ValidateService struct {
+type ValidateUserService struct {
 	Auth             Auth
 	ExistsByUsername ExistsByUsername
 	ExistsByEmail    ExistsByEmail
 }
 
-func (s *ValidateService) Validate(r *Registration) (*ValidRegistration, error) {
+func (s *ValidateUserService) ValidateUser(r *UserRegistration) (*ValidUserRegistration, error) {
 	if s.ExistsByEmail(r.Email) {
 		return nil, EmailAlreadyTaken
 	}
@@ -15,8 +15,8 @@ func (s *ValidateService) Validate(r *Registration) (*ValidRegistration, error) 
 		return nil, UsernameAlreadyTaken
 	}
 
-	id := NewId()
-	valid := &ValidRegistration{
+	id := NewUserId()
+	valid := &ValidUserRegistration{
 		Id:                id,
 		Email:             r.Email,
 		Username:          r.Username,

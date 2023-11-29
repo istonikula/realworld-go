@@ -1,28 +1,28 @@
-package user
+package domain
 
 import "github.com/google/uuid"
 
-type Id struct{ Value uuid.UUID }
+type UserId uuid.UUID
 
-func NewId() Id {
-	return Id{Value: uuid.New()}
+func NewUserId() UserId {
+	return UserId(uuid.New())
 }
 
 type User struct {
-	Id       Id
+	Id       UserId
 	Email    string
 	Token    string
 	Username string
 }
 
-type Registration struct {
+type UserRegistration struct {
 	Username string
 	Email    string
 	Password string
 }
 
-type ValidRegistration struct {
-	Id                Id
+type ValidUserRegistration struct {
+	Id                UserId
 	Email             string
 	Token             string
 	Username          string

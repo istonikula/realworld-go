@@ -1,22 +1,22 @@
-package user_test
+package domain_test
 
 import (
 	rwt "github.com/istonikula/realworld-go/realworld-testing"
 	"testing"
 
+	"github.com/istonikula/realworld-go/realworld-domain"
 	"github.com/istonikula/realworld-go/realworld-domain/internal/test-support/fixture"
 	"github.com/istonikula/realworld-go/realworld-domain/internal/test-support/stub"
-	. "github.com/istonikula/realworld-go/realworld-domain/user"
 )
 
 var userFactory = fixture.UserFactory{Auth: stub.UserStub.Auth}
 var jane = fixture.TestUser(*userFactory.NewUser("jane"))
 
-func TestRegisterUseCase(t *testing.T) {
+func TestRegisterUserUseCase(t *testing.T) {
 	reg := jane.Registration()
 
 	t.Run("register", func(t *testing.T) {
-		act, err := RegisterUseCase{
+		act, err := domain.RegisterUserUseCase{
 			Validate:   stub.UserStub.ValidateUser(userFactory.ValidRegistration),
 			CreateUser: stub.UserStub.CreateUser,
 		}.Run(reg)
@@ -26,25 +26,25 @@ func TestRegisterUseCase(t *testing.T) {
 	})
 
 	t.Run("email already taken", func(t *testing.T) {
-		_, err := RegisterUseCase{
-			Validate:   stub.UserStub.ValidateUserError(EmailAlreadyTaken),
+		_, err := domain.RegisterUserUseCase{
+			Validate:   stub.UserStub.ValidateUserError(domain.EmailAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
 		}.Run(reg)
 		rwt.Assert(t, err != nil, "error expected")
-		rwt.Equals(t, EmailAlreadyTaken, err)
+		rwt.Equals(t, domain.EmailAlreadyTaken, err)
 	})
 
 	t.Run("username already taken", func(t *testing.T) {
-		_, err := RegisterUseCase{
-			Validate:   stub.UserStub.ValidateUserError(UsernameAlreadyTaken),
+		_, err := domain.RegisterUserUseCase{
+			Validate:   stub.UserStub.ValidateUserError(domain.UsernameAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
 		}.Run(reg)
 		rwt.Assert(t, err != nil, "error expected")
-		rwt.Equals(t, UsernameAlreadyTaken, err)
+		rwt.Equals(t, domain.UsernameAlreadyTaken, err)
 	})
 
 	t.Run("create failure", func(t *testing.T) {
-		_, err := RegisterUseCase{
+		_, err := domain.RegisterUserUseCase{
 			Validate:   stub.UserStub.ValidateUser(userFactory.ValidRegistration),
 			CreateUser: stub.UserStub.CreateUserError,
 		}.Run(reg)

@@ -13,6 +13,8 @@ type User struct {
 	Email    string
 	Token    string
 	Username string
+	Bio      *string
+	Image    *string
 }
 
 type UserRegistration struct {

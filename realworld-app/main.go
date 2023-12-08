@@ -2,15 +2,27 @@ package main
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
+	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	"github.com/gin-gonic/gin"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+
+	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 )
 
 func main() {
+	u, _ := url.Parse("postgres://postgres:secret@127.0.0.1:5432/realworld?sslmode=disable")
+	err := dbmate.New(u).Migrate()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	connStr := "user=realworld password=secret dbname=realworld sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -18,8 +30,7 @@ func main() {
 	}
 
 	// NOTE sql.Open does not create a connection to the database, it only validates the arguments provided
-	err = db.Ping()
-	if err != nil {
+	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -95,8 +106,23 @@ type UserRepo struct {
 	db *sql.DB
 }
 
-func (r UserRepo) Create(user *domain.ValidUserRegistration) (*domain.User, error) {
-	return nil, errors.New("TODO repo")
+func (r UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error) {
+	q := Table("users").Insert(
+		"id", "email", "token", "username", "password",
+	) + " RETURNING id, email, token, username, bio, image"
+	stmt, err := r.db.Prepare(q)
+	if err != nil {
+		return nil, fmt.Errorf("UserRepo#Create: prepare failed: %w", err)
+	}
+
+	var user domain.User
+	err = stmt.QueryRow(
+		reg.Id, reg.Email, reg.Token, reg.Username, reg.EncryptedPassword,
+	).Scan(&user.Id, &user.Email, &user.Token, &user.Username, &user.Bio, &user.Image)
+	if err != nil {
+		return nil, fmt.Errorf("UserRepo#Create: insert failed: %w", err)
+	}
+	return &user, nil
 }
 
 func (r UserRepo) ExistsByUsername(username string) bool {
@@ -105,4 +131,16 @@ func (r UserRepo) ExistsByUsername(username string) bool {
 
 func (r UserRepo) ExistsByEmail(email string) bool {
 	return false
+}
+
+type Table string
+
+func (t Table) Insert(cols ...string) string {
+	markerSql := "$1"
+	if len(cols) > 1 {
+		for i := range cols[1:] {
+			markerSql += ", $" + strconv.Itoa(i+2)
+		}
+	}
+	return "INSERT INTO " + string(t) + " (" + strings.Join(cols, ", ") + ") VALUES (" + markerSql + ")"
 }

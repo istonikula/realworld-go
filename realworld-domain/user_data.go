@@ -2,10 +2,10 @@ package domain
 
 import "github.com/google/uuid"
 
-type UserId uuid.UUID
+type UserId struct{ uuid.UUID }
 
 func NewUserId() UserId {
-	return UserId(uuid.New())
+	return UserId{uuid.New()}
 }
 
 type User struct {

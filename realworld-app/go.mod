@@ -6,6 +6,7 @@ require (
 	github.com/amacneil/dbmate/v2 v2.8.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/istonikula/realworld-go/realworld-domain v0.0.0
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
 )
 

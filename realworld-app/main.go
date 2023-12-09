@@ -1,19 +1,18 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
+	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/gin-gonic/gin"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 )
 
 func main() {
@@ -23,16 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	connStr := "user=realworld password=secret dbname=realworld sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// NOTE sql.Open does not create a connection to the database, it only validates the arguments provided
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
+	db := sqlx.MustConnect("postgres", "user=realworld password=secret dbname=realworld sslmode=disable")
 
 	auth := domain.Auth{Settings: domain.Security{TokenSecret: "TODO token"}}
 	userRepo := &UserRepo{db}
@@ -103,22 +93,22 @@ func (dto User) fromDomain(domain *domain.User) User {
 }
 
 type UserRepo struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func (r UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error) {
 	q := Table("users").Insert(
 		"id", "email", "token", "username", "password",
 	) + " RETURNING id, email, token, username, bio, image"
-	stmt, err := r.db.Prepare(q)
+	stmt, err := r.db.Preparex(q)
 	if err != nil {
 		return nil, fmt.Errorf("UserRepo#Create: prepare failed: %w", err)
 	}
 
 	var user domain.User
-	err = stmt.QueryRow(
+	err = stmt.QueryRowx(
 		reg.Id, reg.Email, reg.Token, reg.Username, reg.EncryptedPassword,
-	).Scan(&user.Id, &user.Email, &user.Token, &user.Username, &user.Bio, &user.Image)
+	).StructScan(&user)
 	if err != nil {
 		return nil, fmt.Errorf("UserRepo#Create: insert failed: %w", err)
 	}

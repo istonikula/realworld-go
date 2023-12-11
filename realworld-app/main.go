@@ -15,21 +15,25 @@ import (
 	"strings"
 )
 
-func main() {
+func migrate() {
 	u, _ := url.Parse("postgres://postgres:secret@127.0.0.1:5432/realworld?sslmode=disable")
 	err := dbmate.New(u).Migrate()
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
-	db := sqlx.MustConnect("postgres", "user=realworld password=secret dbname=realworld sslmode=disable")
+func db() *sqlx.DB {
+	return sqlx.MustConnect("postgres", "user=realworld password=secret dbname=realworld sslmode=disable")
+}
 
+func router(db *sqlx.DB) *gin.Engine {
 	auth := domain.Auth{Settings: domain.Security{TokenSecret: "TODO token"}}
 	userRepo := &UserRepo{db}
 
-	router := gin.Default()
+	r := gin.Default()
 
-	router.POST("/api/users", func(c *gin.Context) {
+	r.POST("/api/users", func(c *gin.Context) {
 		var dto UserRegistration
 		if err := c.ShouldBindJSON(&dto); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -58,8 +62,13 @@ func main() {
 		c.JSON(http.StatusCreated, UserResponse{User{}.fromDomain(act)})
 	})
 
-	err = router.Run()
-	if err != nil {
+	return r
+}
+
+func main() {
+	migrate()
+
+	if err := router(db()).Run(); err != nil {
 		log.Fatal(err)
 	}
 }

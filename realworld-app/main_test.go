@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	rwt "github.com/istonikula/realworld-go/realworld-testing"
 )
 
 var testUser = struct {
@@ -23,16 +23,33 @@ var testUser = struct {
 
 func TestUsers(t *testing.T) {
 	t.Run("register", func(t *testing.T) {
-		var client = TestClient{router(db()), nil}
+		var db = db()
+		defer deleteUsers(db)
+		var client = TestClient{router(db), nil}
 
-		act := client.Post("/api/users", UserRegistration{
+		r := client.Post("/api/users", UserRegistration{
 			Email:    testUser.Email,
 			Username: testUser.Username,
 			Password: testUser.Password,
 		})
 
-		rwt.Equals(t, act.Code, http.StatusCreated)
+		assert.Equal(t, http.StatusCreated, r.Code)
+
+		var act UserResponse
+		assert.NoError(t, json.Unmarshal(r.Body.Bytes(), &act))
+		exp := User{Email: testUser.Email, Username: testUser.Username, Token: "ignore", Bio: nil, Image: nil}
+		assertUserIgnoreToken(t, exp, act.User)
 	})
+}
+
+func deleteUsers(db *sqlx.DB) {
+	db.MustExec("DELETE FROM users")
+}
+
+func assertUserIgnoreToken(t *testing.T, exp, act User) {
+	exp.Token = "ignore"
+	act.Token = "ignore"
+	assert.Equal(t, exp, act)
 }
 
 type TestClient struct {

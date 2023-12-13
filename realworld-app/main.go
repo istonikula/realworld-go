@@ -13,6 +13,14 @@ import (
 	"net/url"
 )
 
+func main() {
+	migrate()
+
+	if err := router(db()).Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func migrate() {
 	u, _ := url.Parse("postgres://postgres:secret@127.0.0.1:5432/realworld?sslmode=disable")
 	err := dbmate.New(u).Migrate()
@@ -33,12 +41,4 @@ func router(db *sqlx.DB) *gin.Engine {
 	rest.UserRoutes(r, &auth, userRepo)
 
 	return r
-}
-
-func main() {
-	migrate()
-
-	if err := router(db()).Run(); err != nil {
-		log.Fatal(err)
-	}
 }

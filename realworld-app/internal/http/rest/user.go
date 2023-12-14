@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/istonikula/realworld-go/realworld-app/internal/db"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
@@ -48,7 +49,11 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, repo *db.UserRepo) {
 			Password: dto.Password,
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			if errors.Is(err, domain.EmailAlreadyTaken) || errors.Is(err, domain.UsernameAlreadyTaken) {
+				c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
 			return
 		}
 

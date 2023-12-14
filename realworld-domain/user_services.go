@@ -7,11 +7,15 @@ type ValidateUserService struct {
 }
 
 func (s *ValidateUserService) ValidateUser(r *UserRegistration) (*ValidUserRegistration, error) {
-	if s.ExistsByEmail(r.Email) {
+	if exists, err := s.ExistsByEmail(r.Email); err != nil {
+		return nil, err
+	} else if exists {
 		return nil, EmailAlreadyTaken
 	}
 
-	if s.ExistsByUsername(r.Username) {
+	if exists, err := s.ExistsByUsername(r.Username); err != nil {
+		return nil, err
+	} else if exists {
 		return nil, UsernameAlreadyTaken
 	}
 

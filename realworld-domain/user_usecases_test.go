@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/istonikula/realworld-go/realworld-domain"
-	"github.com/istonikula/realworld-go/realworld-domain/internal/test-support/fixture"
-	"github.com/istonikula/realworld-go/realworld-domain/internal/test-support/stub"
+	"github.com/istonikula/realworld-go/realworld-domain/test-support/fixture"
+	"github.com/istonikula/realworld-go/realworld-domain/test-support/stub"
 )
 
 var userFactory = fixture.UserFactory{Auth: stub.UserStub.Auth}

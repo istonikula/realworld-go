@@ -52,8 +52,7 @@ func TestUsers(t *testing.T) {
 
 		var existing = domain.UserRegistration(testUser)
 		existing.Email = "unique." + testUser.Email
-		var repo = appDb.UserRepo{DB: db}
-		_, _ = repo.Create(userFactory.ValidRegistration(&existing))
+		saveUser(db, &existing)
 
 		r := client.Post("/api/users", rest.UserRegistration(testUser))
 
@@ -68,13 +67,21 @@ func TestUsers(t *testing.T) {
 
 		var existing = domain.UserRegistration(testUser)
 		existing.Username = "unique"
-		var repo = appDb.UserRepo{DB: db}
-		_, _ = repo.Create(userFactory.ValidRegistration(&existing))
+		saveUser(db, &existing)
 
 		r := client.Post("/api/users", rest.UserRegistration(testUser))
 
 		assert.Equal(t, http.StatusUnprocessableEntity, r.Code)
 		assert.Equal(t, "{\"error\":\"email already taken\"}", r.Body.String())
+	})
+}
+
+func saveUser(db *sqlx.DB, user *domain.UserRegistration) {
+	txMgr := appDb.TxMgr{DB: db}
+	_ = txMgr.Write(func(tx *sqlx.Tx) error {
+		var repo = appDb.UserRepo{Tx: tx}
+		_, _ = repo.Create(userFactory.ValidRegistration(user))
+		return nil
 	})
 }
 

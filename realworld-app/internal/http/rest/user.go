@@ -3,8 +3,9 @@ package rest
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/istonikula/realworld-go/realworld-app/internal/db"
+	appDb "github.com/istonikula/realworld-go/realworld-app/internal/db"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
+	"github.com/jmoiron/sqlx"
 	"net/http"
 )
 
@@ -26,28 +27,36 @@ type User struct {
 	Image    *string `json:"image"`
 }
 
-func UserRoutes(router *gin.Engine, auth *domain.Auth, repo *db.UserRepo) {
+func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 	router.POST("/api/users", func(c *gin.Context) {
 		var dto UserRegistration
-		if err := c.ShouldBindJSON(&dto); err != nil {
+		var err error
+		if err = c.ShouldBindJSON(&dto); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		validateUserSrv := domain.ValidateUserService{
-			Auth:             *auth,
-			ExistsByUsername: repo.ExistsByUsername,
-			ExistsByEmail:    repo.ExistsByEmail,
-		}
+		var act *domain.User
+		err = txMgr.Write(func(tx *sqlx.Tx) error {
+			repo := &appDb.UserRepo{Tx: tx}
 
-		act, err := domain.RegisterUserUseCase{
-			Validate:   validateUserSrv.ValidateUser,
-			CreateUser: repo.Create,
-		}.Run(&domain.UserRegistration{
-			Username: dto.Username,
-			Email:    dto.Email,
-			Password: dto.Password,
+			validateUserSrv := domain.ValidateUserService{
+				Auth:             *auth,
+				ExistsByUsername: repo.ExistsByUsername,
+				ExistsByEmail:    repo.ExistsByEmail,
+			}
+
+			act, err = domain.RegisterUserUseCase{
+				Validate:   validateUserSrv.ValidateUser,
+				CreateUser: repo.Create,
+			}.Run(&domain.UserRegistration{
+				Username: dto.Username,
+				Email:    dto.Email,
+				Password: dto.Password,
+			})
+			return err
 		})
+
 		if err != nil {
 			if errors.Is(err, domain.EmailAlreadyTaken) || errors.Is(err, domain.UsernameAlreadyTaken) {
 				c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})

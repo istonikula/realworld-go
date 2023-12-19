@@ -18,8 +18,8 @@ func (t table) insert(cols ...string) string {
 	return "INSERT INTO " + string(t) + " (" + strings.Join(cols, ", ") + ") VALUES (" + markerSql + ")"
 }
 
-func (t table) queryIfExists(db *sqlx.DB, where string, params ...any) (bool, error) {
-	stmt, err := db.Preparex("SELECT (COUNT(*) > 0) FROM " + string(t) + " WHERE " + where)
+func (t table) queryIfExists(tx *sqlx.Tx, where string, params ...any) (bool, error) {
+	stmt, err := tx.Preparex("SELECT (COUNT(*) > 0) FROM " + string(t) + " WHERE " + where)
 	if err != nil {
 		return false, err
 	}

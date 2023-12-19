@@ -35,10 +35,11 @@ func db() *sqlx.DB {
 
 func router(db *sqlx.DB) *gin.Engine {
 	auth := domain.Auth{Settings: domain.Security{TokenSecret: "TODO token"}}
-	userRepo := &appDb.UserRepo{DB: db}
+
+	txMgr := &appDb.TxMgr{DB: db}
 
 	r := gin.Default()
-	rest.UserRoutes(r, &auth, userRepo)
+	rest.UserRoutes(r, &auth, txMgr)
 
 	return r
 }

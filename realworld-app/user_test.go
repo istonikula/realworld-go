@@ -31,7 +31,8 @@ var userFactory = fixture.UserFactory{Auth: stub.UserStub.Auth}
 
 func TestUsers(t *testing.T) {
 	t.Run("register", func(t *testing.T) {
-		var db = db()
+		cfg := readConfig()
+		db := db(&cfg.DataSource)
 		defer deleteUsers(db)
 		var client = apitest.Client{Router: router(db), Token: nil}
 
@@ -46,7 +47,8 @@ func TestUsers(t *testing.T) {
 	})
 
 	t.Run("cannot register already existing username", func(t *testing.T) {
-		var db = db()
+		cfg := readConfig()
+		var db = db(&cfg.DataSource)
 		defer deleteUsers(db)
 		var client = apitest.Client{Router: router(db), Token: nil}
 
@@ -61,7 +63,8 @@ func TestUsers(t *testing.T) {
 	})
 
 	t.Run("cannot register already existing email", func(t *testing.T) {
-		var db = db()
+		cfg := readConfig()
+		var db = db(&cfg.DataSource)
 		defer deleteUsers(db)
 		var client = apitest.Client{Router: router(db), Token: nil}
 

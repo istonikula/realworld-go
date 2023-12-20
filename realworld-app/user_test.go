@@ -31,8 +31,7 @@ var userFactory = fixture.UserFactory{Auth: stub.UserStub.Auth}
 
 func TestUsers(t *testing.T) {
 	t.Run("register", func(t *testing.T) {
-		cfg := readConfig()
-		db := db(&cfg.DataSource)
+		db := setup()
 		defer deleteUsers(db)
 		var client = apitest.Client{Router: router(db), Token: nil}
 
@@ -47,8 +46,7 @@ func TestUsers(t *testing.T) {
 	})
 
 	t.Run("cannot register already existing username", func(t *testing.T) {
-		cfg := readConfig()
-		var db = db(&cfg.DataSource)
+		db := setup()
 		defer deleteUsers(db)
 		var client = apitest.Client{Router: router(db), Token: nil}
 
@@ -63,8 +61,7 @@ func TestUsers(t *testing.T) {
 	})
 
 	t.Run("cannot register already existing email", func(t *testing.T) {
-		cfg := readConfig()
-		var db = db(&cfg.DataSource)
+		db := setup()
 		defer deleteUsers(db)
 		var client = apitest.Client{Router: router(db), Token: nil}
 
@@ -77,6 +74,11 @@ func TestUsers(t *testing.T) {
 		assert.Equal(t, http.StatusUnprocessableEntity, r.Code)
 		assert.Equal(t, "{\"error\":\"email already taken\"}", r.Body.String())
 	})
+}
+
+func setup() *sqlx.DB {
+	cfg := readConfig()
+	return db(&cfg.DataSource)
 }
 
 func saveUser(db *sqlx.DB, user *domain.UserRegistration) {

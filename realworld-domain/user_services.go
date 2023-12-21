@@ -20,11 +20,17 @@ func (s *ValidateUserService) ValidateUser(r *UserRegistration) (*ValidUserRegis
 	}
 
 	id := NewUserId()
+
+	token, err := s.Auth.NewToken(id)
+	if err != nil {
+		return nil, err
+	}
+
 	valid := &ValidUserRegistration{
 		Id:                id,
 		Email:             r.Email,
 		Username:          r.Username,
-		Token:             s.Auth.NewToken(id),
+		Token:             token,
 		EncryptedPassword: s.Auth.EncryptPassword(r.Password),
 	}
 	return valid, nil

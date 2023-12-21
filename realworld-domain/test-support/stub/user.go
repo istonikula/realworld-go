@@ -2,7 +2,8 @@ package stub
 
 import (
 	"errors"
-	"github.com/istonikula/realworld-go/realworld-domain"
+
+	domain "github.com/istonikula/realworld-go/realworld-domain"
 )
 
 var UserStub = struct {
@@ -10,10 +11,10 @@ var UserStub = struct {
 	CreateUser           domain.CreateUser
 	CreateUserError      domain.CreateUser
 	UnexpectedCreateUser domain.CreateUser
-	ValidateUser         func(func(*domain.UserRegistration) *domain.ValidUserRegistration) domain.ValidateUserRegistration
+	ValidateUser         func(func(domain.UserRegistration) *domain.ValidUserRegistration) domain.ValidateUserRegistration
 	ValidateUserError    func(*domain.UserRegistrationError) domain.ValidateUserRegistration
 }{
-	Auth: domain.Auth{Settings: domain.Security{TokenSecret: ""}},
+	Auth: domain.Auth{Settings: domain.AuthSettings{TokenSecret: "secret", TokenTTL: 1800}},
 
 	CreateUser: func(r *domain.ValidUserRegistration) (*domain.User, error) {
 		return &domain.User{Id: domain.NewUserId(), Email: r.Email, Token: r.Token, Username: r.Username}, nil
@@ -25,9 +26,9 @@ var UserStub = struct {
 		panic("unexpected create user")
 	},
 
-	ValidateUser: func(f func(*domain.UserRegistration) *domain.ValidUserRegistration) domain.ValidateUserRegistration {
+	ValidateUser: func(f func(domain.UserRegistration) *domain.ValidUserRegistration) domain.ValidateUserRegistration {
 		return func(r *domain.UserRegistration) (*domain.ValidUserRegistration, error) {
-			return f(r), nil
+			return f(*r), nil
 		}
 	},
 	ValidateUserError: func(e *domain.UserRegistrationError) domain.ValidateUserRegistration {

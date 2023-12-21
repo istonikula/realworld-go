@@ -2,7 +2,8 @@ package fixture
 
 import (
 	"fmt"
-	"github.com/istonikula/realworld-go/realworld-domain"
+
+	domain "github.com/istonikula/realworld-go/realworld-domain"
 )
 
 type UserFactory struct {
@@ -22,14 +23,16 @@ func (f UserFactory) NewUser(username string, id ...domain.UserId) *domain.User 
 	}
 }
 
-func (f UserFactory) ValidRegistration(r *domain.UserRegistration) *domain.ValidUserRegistration {
+func (f UserFactory) ValidRegistration(r domain.UserRegistration) *domain.ValidUserRegistration {
 	id := domain.NewUserId()
+
+	token, _ := f.Auth.NewToken(id)
 
 	return &domain.ValidUserRegistration{
 		Id:                id,
 		Email:             r.Email,
 		Username:          r.Username,
-		Token:             f.Auth.NewToken(id),
+		Token:             token,
 		EncryptedPassword: f.Auth.EncryptPassword(r.Password),
 	}
 }

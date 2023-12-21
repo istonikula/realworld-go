@@ -1,6 +1,12 @@
+auth:
+  tokenSecret: secret
+  tokenTTL: 1800 # 30min
+
 dataSource:
   host: 127.0.0.1
   port: 5432
   user: realworld
   password: secret
+  migrateUser: postgres
+  migratePassword: secret
   name: realworld

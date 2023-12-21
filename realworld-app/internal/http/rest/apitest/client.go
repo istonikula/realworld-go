@@ -3,9 +3,10 @@ package apitest
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Client struct {
@@ -36,6 +37,6 @@ func serve(n *gin.Engine, r *http.Request) *httptest.ResponseRecorder {
 
 func (c Client) maybeToken(r *http.Request) {
 	if c.Token != nil {
-		r.Header.Add("Authorization", "Token"+*c.Token)
+		r.Header.Add("Authorization", "Token "+*c.Token)
 	}
 }

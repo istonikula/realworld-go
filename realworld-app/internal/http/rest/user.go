@@ -2,11 +2,12 @@ package rest
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	appDb "github.com/istonikula/realworld-go/realworld-app/internal/db"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
 	"github.com/jmoiron/sqlx"
-	"net/http"
 )
 
 type UserRegistration struct {
@@ -28,6 +29,11 @@ type User struct {
 }
 
 func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
+	router.GET("/api/user", ResolveUser(auth, txMgr), RequireUser(), func(c *gin.Context) {
+		ctx := Context{c}
+		ctx.JSON(http.StatusOK, UserResponse{User{}.fromDomain(ctx.User())})
+	})
+
 	router.POST("/api/users", func(c *gin.Context) {
 		var dto UserRegistration
 		var err error

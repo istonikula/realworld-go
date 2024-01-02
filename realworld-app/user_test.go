@@ -20,8 +20,8 @@ import (
 type TestUser rest.UserRegistration
 
 var testUser = TestUser{
-	Email:    "foo@bar.com",
 	Username: "foo",
+	Email:    "foo@bar.com",
 	Password: "plain",
 }
 

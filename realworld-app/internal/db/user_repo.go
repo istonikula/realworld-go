@@ -29,7 +29,7 @@ func (r UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error
 
 	var user domain.User
 	err = stmt.QueryRowx(
-		reg.Id, reg.Email, reg.Token, reg.Username, reg.EncryptedPassword,
+		reg.Id, reg.Email, reg.Token, reg.Username, reg.PasswordHash,
 	).StructScan(&user)
 	if err != nil {
 		return nil, fmt.Errorf(errCtx+"insert: %w", err)
@@ -93,6 +93,6 @@ func (r UserRepo) FindByEmail(email string) (*domain.UserAndPassword, error) {
 		return nil, fmt.Errorf(errCtx+"query: %w", err)
 	}
 
-	m.EncryptedPassword = m.Password
+	m.PasswordHash = m.Password
 	return &m.UserAndPassword, nil
 }

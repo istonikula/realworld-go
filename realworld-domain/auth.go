@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -64,13 +66,14 @@ func (a *Auth) ValidateToken(str string) *Token {
 	return &Token{Id: UserId{idUuid}}
 }
 
-func (a *Auth) EncryptPassword(plain string) string {
-	// TODO encryptor
-	return plain
+func (a *Auth) HashPassword(plain string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
 }
 
-func (a *Auth) CheckPassword(plain string, encrypted string) (ok bool) {
-	// TODO encryptor
+func (a *Auth) CheckPassword(plain string, hash string) (ok bool) {
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain)); err != nil {
+		return false
+	}
 	return true
 }
 

@@ -51,7 +51,7 @@ func (u LoginUserUseCase) Run(l *Login) (*User, error) {
 		return nil, UserNotFound
 	}
 
-	if ok := u.Auth.CheckPassword(l.Password, found.EncryptedPassword); !ok {
+	if ok := u.Auth.CheckPassword(l.Password, found.PasswordHash); !ok {
 		return nil, BadCredentials
 	}
 

@@ -26,12 +26,17 @@ func (s *ValidateUserService) ValidateUser(r *UserRegistration) (*ValidUserRegis
 		return nil, err
 	}
 
+	hash, err := s.Auth.HashPassword(r.Password)
+	if err != nil {
+		return nil, err
+	}
+
 	valid := &ValidUserRegistration{
-		Id:                id,
-		Email:             r.Email,
-		Username:          r.Username,
-		Token:             token,
-		EncryptedPassword: s.Auth.EncryptPassword(r.Password),
+		Id:           id,
+		Email:        r.Email,
+		Username:     r.Username,
+		Token:        token,
+		PasswordHash: string(hash),
 	}
 	return valid, nil
 }

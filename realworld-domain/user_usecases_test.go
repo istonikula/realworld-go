@@ -1,7 +1,7 @@
 package domain_test
 
 import (
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/istonikula/realworld-go/realworld-domain"
@@ -20,9 +20,9 @@ func TestRegisterUserUseCase(t *testing.T) {
 			Validate:   stub.UserStub.ValidateUser(userFactory.ValidRegistration),
 			CreateUser: stub.UserStub.CreateUser,
 		}.Run(reg)
-		assert.NoError(t, err)
-		assert.Equal(t, jane.Email, act.Email)
-		assert.Equal(t, jane.Username, act.Username)
+		require.NoError(t, err)
+		require.Equal(t, jane.Email, act.Email)
+		require.Equal(t, jane.Username, act.Username)
 	})
 
 	t.Run("email already taken", func(t *testing.T) {
@@ -30,7 +30,7 @@ func TestRegisterUserUseCase(t *testing.T) {
 			Validate:   stub.UserStub.ValidateUserError(domain.EmailAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
 		}.Run(reg)
-		assert.Equal(t, domain.EmailAlreadyTaken, err)
+		require.Equal(t, domain.EmailAlreadyTaken, err)
 	})
 
 	t.Run("username already taken", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestRegisterUserUseCase(t *testing.T) {
 			Validate:   stub.UserStub.ValidateUserError(domain.UsernameAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
 		}.Run(reg)
-		assert.Equal(t, domain.UsernameAlreadyTaken, err)
+		require.Equal(t, domain.UsernameAlreadyTaken, err)
 	})
 
 	t.Run("create failure", func(t *testing.T) {
@@ -46,6 +46,54 @@ func TestRegisterUserUseCase(t *testing.T) {
 			Validate:   stub.UserStub.ValidateUser(userFactory.ValidRegistration),
 			CreateUser: stub.UserStub.CreateUserError,
 		}.Run(reg)
-		assert.Equal(t, "unexpected error", err.Error())
+		require.Equal(t, "unexpected error", err.Error())
+	})
+}
+
+func TestLoginUserUseCase(t *testing.T) {
+	reg := jane.Registration()
+
+	t.Run("login", func(t *testing.T) {
+		exp := userFactory.UserAndPassword(*reg)
+
+		act, err := domain.LoginUserUseCase{
+			Auth: stub.UserStub.Auth,
+			GetUser: func(email string) (*domain.UserAndPassword, error) {
+				return exp, nil
+			},
+		}.Run(&domain.Login{
+			Email:    reg.Email,
+			Password: reg.Password,
+		})
+		require.NoError(t, err)
+		require.Equal(t, &exp.User, act)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		act, err := domain.LoginUserUseCase{
+			Auth: stub.UserStub.Auth,
+			GetUser: func(email string) (*domain.UserAndPassword, error) {
+				return nil, nil
+			},
+		}.Run(&domain.Login{
+			Email:    reg.Email,
+			Password: reg.Password,
+		})
+		require.Equal(t, domain.UserNotFound, err)
+		require.Nil(t, act)
+	})
+
+	t.Run("bad credentials", func(t *testing.T) {
+		act, err := domain.LoginUserUseCase{
+			Auth: stub.UserStub.Auth,
+			GetUser: func(email string) (*domain.UserAndPassword, error) {
+				return userFactory.UserAndPassword(*reg), nil
+			},
+		}.Run(&domain.Login{
+			Email:    reg.Email,
+			Password: "invalid",
+		})
+		require.Equal(t, domain.BadCredentials, err)
+		require.Nil(t, act)
 	})
 }

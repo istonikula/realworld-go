@@ -28,12 +28,27 @@ func (f UserFactory) ValidRegistration(r domain.UserRegistration) *domain.ValidU
 
 	token, _ := f.Auth.NewToken(id)
 
+	hash, _ := f.Auth.HashPassword(r.Password)
+
 	return &domain.ValidUserRegistration{
-		Id:                id,
-		Email:             r.Email,
-		Username:          r.Username,
-		Token:             token,
-		EncryptedPassword: f.Auth.EncryptPassword(r.Password),
+		Id:           id,
+		Email:        r.Email,
+		Username:     r.Username,
+		Token:        token,
+		PasswordHash: string(hash),
+	}
+}
+
+func (f UserFactory) UserAndPassword(r domain.UserRegistration) *domain.UserAndPassword {
+	v := f.ValidRegistration(r)
+	return &domain.UserAndPassword{
+		User: domain.User{
+			Id:       v.Id,
+			Email:    r.Email,
+			Token:    v.Token,
+			Username: r.Username,
+		},
+		PasswordHash: v.PasswordHash,
 	}
 }
 

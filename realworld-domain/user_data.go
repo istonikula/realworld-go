@@ -24,11 +24,11 @@ type UserRegistration struct {
 }
 
 type ValidUserRegistration struct {
-	Id                UserId
-	Email             string
-	Token             string
-	Username          string
-	EncryptedPassword string
+	Id           UserId
+	Email        string
+	Token        string
+	Username     string
+	PasswordHash string
 }
 
 type Login struct {
@@ -38,5 +38,5 @@ type Login struct {
 
 type UserAndPassword struct {
 	User
-	EncryptedPassword string
+	PasswordHash string
 }

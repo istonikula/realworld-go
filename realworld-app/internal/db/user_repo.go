@@ -18,12 +18,13 @@ var tbl = table("users")
 const selectCols = "id, email, token, username, bio, image"
 
 func (r UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error) {
+	const errCtx = "UserRepo#Create "
 	q := tbl.insert(
 		"id", "email", "token", "username", "password",
 	) + " RETURNING " + selectCols
 	stmt, err := r.Tx.Preparex(q)
 	if err != nil {
-		return nil, fmt.Errorf("UserRepo#Create prepare: %w", err)
+		return nil, fmt.Errorf(errCtx+"prepare: %w", err)
 	}
 
 	var user domain.User
@@ -31,7 +32,7 @@ func (r UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error
 		reg.Id, reg.Email, reg.Token, reg.Username, reg.EncryptedPassword,
 	).StructScan(&user)
 	if err != nil {
-		return nil, fmt.Errorf("UserRepo#Create insert: %w", err)
+		return nil, fmt.Errorf(errCtx+"insert: %w", err)
 	}
 	return &user, nil
 }
@@ -69,4 +70,29 @@ func (r UserRepo) FindById(id domain.UserId) (*domain.User, error) {
 	}
 
 	return &user, nil
+}
+
+func (r UserRepo) FindByEmail(email string) (*domain.UserAndPassword, error) {
+	const errCtx = "UserRepo#FindByEmail "
+	stmt, err := r.Tx.Preparex(fmt.Sprintf("SELECT %v, password FROM %v WHERE email = $1", selectCols, tbl))
+	if err != nil {
+		return nil, fmt.Errorf(errCtx+"prepare: %w", err)
+	}
+
+	type model struct {
+		domain.UserAndPassword
+		Password string
+	}
+	var m model
+	err = stmt.QueryRowx(email).StructScan(&m)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf(errCtx+"query: %w", err)
+	}
+
+	m.EncryptedPassword = m.Password
+	return &m.UserAndPassword, nil
 }

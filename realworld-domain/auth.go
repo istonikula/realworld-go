@@ -69,6 +69,11 @@ func (a *Auth) EncryptPassword(plain string) string {
 	return plain
 }
 
+func (a *Auth) CheckPassword(plain string, encrypted string) (ok bool) {
+	// TODO encryptor
+	return true
+}
+
 func (a *Auth) parse(token string) (*jwt.Token, error) {
 	return jwt.Parse(token, func(parsed *jwt.Token) (any, error) {
 		if _, ok := parsed.Method.(*jwt.SigningMethodHMAC); !ok {

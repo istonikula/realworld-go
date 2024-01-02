@@ -30,3 +30,13 @@ type ValidUserRegistration struct {
 	Username          string
 	EncryptedPassword string
 }
+
+type Login struct {
+	Email    string
+	Password string
+}
+
+type UserAndPassword struct {
+	User
+	EncryptedPassword string
+}

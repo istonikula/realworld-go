@@ -2,6 +2,8 @@ package rest
 
 import (
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +14,11 @@ import (
 
 type UserRegistration struct {
 	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type Login struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -36,13 +43,13 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 
 	router.POST("/api/users", func(c *gin.Context) {
 		var dto UserRegistration
-		var err error
-		if err = c.ShouldBindJSON(&dto); err != nil {
+		err := c.ShouldBindJSON(&dto)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var act *domain.User
+		var u *domain.User
 		err = txMgr.Write(func(tx *sqlx.Tx) error {
 			repo := &appDb.UserRepo{Tx: tx}
 
@@ -52,7 +59,7 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 				ExistsByEmail:    repo.ExistsByEmail,
 			}
 
-			act, err = domain.RegisterUserUseCase{
+			u, err = domain.RegisterUserUseCase{
 				Validate:   validateUserSrv.ValidateUser,
 				CreateUser: repo.Create,
 			}.Run(&domain.UserRegistration{
@@ -72,7 +79,38 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 			return
 		}
 
-		c.JSON(http.StatusCreated, UserResponse{User{}.fromDomain(act)})
+		c.JSON(http.StatusCreated, UserResponse{User{}.fromDomain(u)})
+	})
+
+	router.POST("/api/users/login", func(c *gin.Context) {
+		var dto Login
+		err := c.ShouldBindJSON(&dto)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var u *domain.User
+		err = txMgr.Read(func(tx *sqlx.Tx) error {
+			repo := &appDb.UserRepo{Tx: tx}
+
+			u, err = domain.LoginUserUseCase{
+				Auth:    *auth,
+				GetUser: repo.FindByEmail,
+			}.Run(&domain.Login{
+				Email:    dto.Email,
+				Password: dto.Password,
+			})
+			return err
+		})
+
+		if err != nil {
+			slog.Info(fmt.Errorf("login: %w", err).Error())
+			c.Status(http.StatusUnauthorized)
+			return
+		}
+
+		c.JSON(http.StatusOK, UserResponse{User{}.fromDomain(u)})
 	})
 }
 

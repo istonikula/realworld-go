@@ -28,18 +28,38 @@ var testUser = TestUser{
 var userFactory = fixture.UserFactory{Auth: stub.UserStub.Auth}
 
 func TestUsers(t *testing.T) {
-	t.Run("register", func(t *testing.T) {
+	t.Run("register and login", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
 		client := apitest.Client{Router: router(db, cfg), Token: nil}
 
 		r := client.Post("/api/users", rest.UserRegistration(testUser))
-
 		require.Equal(t, http.StatusCreated, r.Code)
+		registered := readBody[rest.UserResponse](t, r).User
+		require.Equal(t, testUser.Email, registered.Email)
+		require.Equal(t, testUser.Username, registered.Username)
+		require.NotNil(t, registered.Token)
 
-		act := readBody[rest.UserResponse](t, r).User
-		require.Equal(t, testUser.Email, act.Email)
-		require.Equal(t, testUser.Username, act.Username)
+		r = client.Post("/api/users/login", rest.Login{Email: testUser.Email, Password: testUser.Password})
+		require.Equal(t, http.StatusOK, r.Code)
+		loggedIn := readBody[rest.UserResponse](t, r).User
+		require.Equal(t, rest.User{
+			Email:    registered.Email,
+			Token:    registered.Token,
+			Username: registered.Username,
+		}, loggedIn)
+
+		r = client.Get("/api/user")
+		require.Equal(t, http.StatusUnauthorized, r.Code)
+
+		client.Token = &loggedIn.Token
+		r = client.Get("/api/user")
+		require.Equal(t, http.StatusOK, r.Code)
+		require.Equal(t, rest.User{
+			Email:    loggedIn.Email,
+			Token:    loggedIn.Token,
+			Username: loggedIn.Username,
+		}, readBody[rest.UserResponse](t, r).User)
 	})
 
 	t.Run("cannot register already existing username", func(t *testing.T) {

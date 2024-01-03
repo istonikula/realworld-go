@@ -57,13 +57,13 @@ func db(c *config.DataSource) *sqlx.DB {
 }
 
 func router(db *sqlx.DB, cfg *config.Config) *gin.Engine {
-	auth := domain.Auth{Settings: domain.AuthSettings{TokenSecret: cfg.Auth.TokenSecret, TokenTTL: cfg.Auth.TokenTTL}}
+	auth := &domain.Auth{Settings: domain.AuthSettings{TokenSecret: cfg.Auth.TokenSecret, TokenTTL: cfg.Auth.TokenTTL}}
 
 	txMgr := &appDb.TxMgr{DB: db}
 
 	r := gin.Default()
-	r.Use(rest.HandleLastError())
-	rest.UserRoutes(r, &auth, txMgr)
+	r.Use(rest.HandleLastError(), rest.ResolveUser(auth, txMgr))
+	rest.UserRoutes(r, auth, txMgr)
 
 	return r
 }

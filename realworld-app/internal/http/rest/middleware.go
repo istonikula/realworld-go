@@ -16,13 +16,14 @@ func ResolveUser(auth *domain.Auth, txMgr *db.TxMgr) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := Context{c}
 
+		token := auth.ValidateToken(ctx.Token())
+		if token == nil {
+			ctx.Next()
+			return
+		}
+
 		err := txMgr.Read(func(tx *sqlx.Tx) error {
 			repo := &db.UserRepo{Tx: tx}
-
-			token := auth.ValidateToken(ctx.Token())
-			if token == nil {
-				return nil
-			}
 
 			user, err := repo.FindById(token.Id)
 			if err != nil {
@@ -46,8 +47,7 @@ func RequireUser() gin.HandlerFunc {
 		ctx := Context{c}
 
 		if ctx.User() == nil {
-			ctx.Status(http.StatusUnauthorized)
-			ctx.Abort()
+			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 

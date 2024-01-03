@@ -35,7 +35,7 @@ type User struct {
 }
 
 func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
-	router.GET("/api/user", ResolveUser(auth, txMgr), RequireUser(), func(c *gin.Context) {
+	router.GET("/api/user", RequireUser(), func(c *gin.Context) {
 		ctx := Context{c}
 		ctx.JSON(http.StatusOK, UserResponse{User{}.fromDomain(ctx.User())})
 	})

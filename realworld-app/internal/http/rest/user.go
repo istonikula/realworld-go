@@ -71,7 +71,8 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 		})
 
 		if err != nil {
-			if errors.Is(err, domain.EmailAlreadyTaken) || errors.Is(err, domain.UsernameAlreadyTaken) {
+			var regErr *domain.UserRegistrationError
+			if errors.As(err, &regErr) {
 				c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -55,6 +55,14 @@ func RequireUser() gin.HandlerFunc {
 	}
 }
 
+type BindError struct {
+	err error
+}
+
+func (b *BindError) Error() string {
+	return b.err.Error()
+}
+
 func HandleLastError() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
@@ -63,8 +71,11 @@ func HandleLastError() gin.HandlerFunc {
 			return
 		}
 
+		var bindErr *BindError
 		var regErr *domain.UserRegistrationError
 		switch {
+		case errors.As(err, &bindErr):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case errors.As(err, &regErr):
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		default:

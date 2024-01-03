@@ -46,8 +46,7 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 		var dto UserRegistration
 		err := c.ShouldBindJSON(&dto)
 		if err != nil {
-			// TODO add binding context, i.e. "Bad Request"
-			ctx.AbortWithError(err)
+			ctx.AbortWithError(&BindError{err})
 			return
 		}
 
@@ -86,8 +85,7 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 		var dto Login
 		err := ctx.ShouldBindJSON(&dto)
 		if err != nil {
-			// TODO add binding context, i.e. "Bad Request"
-			ctx.AbortWithError(err)
+			ctx.AbortWithError(&BindError{err})
 			return
 		}
 

@@ -73,7 +73,7 @@ func TestUsers(t *testing.T) {
 
 		r := client.Post("/api/users", rest.UserRegistration(testUser))
 
-		require.Equal(t, http.StatusUnprocessableEntity, r.Code)
+		require.Equal(t, http.StatusConflict, r.Code)
 		require.Equal(t, "{\"error\":\"username already taken\"}", r.Body.String())
 	})
 
@@ -88,8 +88,22 @@ func TestUsers(t *testing.T) {
 
 		r := client.Post("/api/users", rest.UserRegistration(testUser))
 
-		require.Equal(t, http.StatusUnprocessableEntity, r.Code)
+		require.Equal(t, http.StatusConflict, r.Code)
 		require.Equal(t, "{\"error\":\"email already taken\"}", r.Body.String())
+	})
+
+	t.Run("empty register payload", func(t *testing.T) {
+		db, cfg := setup()
+		defer deleteUsers(db)
+		client := apitest.Client{Router: router(db, cfg), Token: nil}
+
+		r := client.Post("/api/users", rest.UserRegistration{})
+		require.Equal(t, http.StatusUnprocessableEntity, r.Code)
+		require.Equal(t,
+			"{\"error\":\"email: cannot be blank; password: cannot be blank; username: cannot be blank.\"}",
+			r.Body.String(),
+		)
+
 	})
 
 	t.Run("current user is resolved from token", func(t *testing.T) {

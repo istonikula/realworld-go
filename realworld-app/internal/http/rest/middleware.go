@@ -3,6 +3,7 @@ package rest
 import (
 	"errors"
 	"fmt"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"log/slog"
 	"net/http"
 
@@ -73,10 +74,13 @@ func HandleLastError() gin.HandlerFunc {
 
 		var bindErr *BindError
 		var regErr *domain.UserRegistrationError
+		var vErrs validation.Errors
 		switch {
 		case errors.As(err, &bindErr):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case errors.As(err, &regErr):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		case errors.As(err, &vErrs):
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

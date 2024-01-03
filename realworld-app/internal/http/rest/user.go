@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	appDb "github.com/istonikula/realworld-go/realworld-app/internal/db"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
 	"github.com/jmoiron/sqlx"
@@ -17,9 +19,24 @@ type UserRegistration struct {
 	Password string `json:"password"`
 }
 
+func (r UserRegistration) Validate() error {
+	return v.ValidateStruct(&r,
+		v.Field(&r.Username, v.Required),
+		v.Field(&r.Email, v.Required, is.Email),
+		v.Field(&r.Password, v.Required),
+	)
+}
+
 type Login struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+func (l Login) Validate() error {
+	return v.ValidateStruct(&l,
+		v.Field(&l.Email, v.Required, is.Email),
+		v.Field(&l.Password, v.Required),
+	)
 }
 
 type UserResponse struct {
@@ -47,6 +64,11 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 		err := c.ShouldBindJSON(&dto)
 		if err != nil {
 			ctx.AbortWithError(&BindError{err})
+			return
+		}
+
+		if err = dto.Validate(); err != nil {
+			ctx.AbortWithError(err)
 			return
 		}
 

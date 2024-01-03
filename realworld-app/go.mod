@@ -5,6 +5,7 @@ go 1.21.4
 require (
 	github.com/amacneil/dbmate/v2 v2.8.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/istonikula/realworld-go/realworld-domain v0.0.0
 	github.com/jmoiron/sqlx v1.3.5

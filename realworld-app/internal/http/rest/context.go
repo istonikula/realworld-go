@@ -11,7 +11,7 @@ type Context struct{ *gin.Context }
 
 const userKey = "user"
 
-func (c Context) User() *domain.User {
+func (c *Context) User() *domain.User {
 	maybeUser, exists := c.Get(userKey)
 	if !exists {
 		return nil
@@ -25,12 +25,17 @@ func (c Context) User() *domain.User {
 	return &user
 }
 
-func (c Context) SetUser(user domain.User) {
+func (c *Context) SetUser(user domain.User) {
 	c.Set(userKey, user)
 }
 
-func (c Context) Token() string {
+func (c *Context) Token() string {
 	const prefix = "Token "
 	auth := c.Request.Header.Get("Authorization")
 	return strings.TrimPrefix(auth, prefix)
+}
+
+func (c *Context) AbortWithError(err error) {
+	c.Abort()
+	_ = c.Error(err)
 }

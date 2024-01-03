@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -42,10 +41,13 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 	})
 
 	router.POST("/api/users", func(c *gin.Context) {
+		ctx := Context{c}
+
 		var dto UserRegistration
 		err := c.ShouldBindJSON(&dto)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			// TODO add binding context, i.e. "Bad Request"
+			ctx.AbortWithError(err)
 			return
 		}
 
@@ -71,12 +73,7 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 		})
 
 		if err != nil {
-			var regErr *domain.UserRegistrationError
-			if errors.As(err, &regErr) {
-				c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
+			ctx.AbortWithError(err)
 			return
 		}
 
@@ -84,10 +81,13 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 	})
 
 	router.POST("/api/users/login", func(c *gin.Context) {
+		ctx := Context{c}
+
 		var dto Login
-		err := c.ShouldBindJSON(&dto)
+		err := ctx.ShouldBindJSON(&dto)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			// TODO add binding context, i.e. "Bad Request"
+			ctx.AbortWithError(err)
 			return
 		}
 
@@ -107,11 +107,11 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 
 		if err != nil {
 			slog.Info(fmt.Errorf("login: %w", err).Error())
-			c.Status(http.StatusUnauthorized)
+			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		c.JSON(http.StatusOK, UserResponse{User{}.fromDomain(u)})
+		ctx.JSON(http.StatusOK, UserResponse{User{}.fromDomain(u)})
 	})
 }
 

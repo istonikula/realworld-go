@@ -62,6 +62,7 @@ func router(db *sqlx.DB, cfg *config.Config) *gin.Engine {
 	txMgr := &appDb.TxMgr{DB: db}
 
 	r := gin.Default()
+	r.Use(rest.HandleLastError())
 	rest.UserRoutes(r, &auth, txMgr)
 
 	return r

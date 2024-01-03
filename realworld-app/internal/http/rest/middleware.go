@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -51,5 +52,23 @@ func RequireUser() gin.HandlerFunc {
 		}
 
 		ctx.Next()
+	}
+}
+
+func HandleLastError() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+		err := c.Errors.Last()
+		if err == nil {
+			return
+		}
+
+		var regErr *domain.UserRegistrationError
+		switch {
+		case errors.As(err, &regErr):
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 	}
 }

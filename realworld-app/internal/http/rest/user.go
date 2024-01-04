@@ -111,6 +111,11 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 			return
 		}
 
+		if err = dto.Validate(); err != nil {
+			ctx.AbortWithError(err)
+			return
+		}
+
 		var u *domain.User
 		err = txMgr.Read(func(tx *sqlx.Tx) error {
 			repo := &appDb.UserRepo{Tx: tx}

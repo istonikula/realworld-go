@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/istonikula/realworld-go/realworld-app/internal/boot"
 	"github.com/istonikula/realworld-go/realworld-app/internal/config"
 	appDb "github.com/istonikula/realworld-go/realworld-app/internal/db"
 	"github.com/istonikula/realworld-go/realworld-app/internal/http/rest"
@@ -52,7 +54,7 @@ func TestUsers(t *testing.T) {
 	t.Run("register and login", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
-		client := apitest.Client{Router: router(db, cfg), Token: nil}
+		client := apitest.Client{Router: boot.Router(cfg), Token: nil}
 
 		r := client.Post("/api/users", testUser.Reg())
 		require.Equal(t, http.StatusCreated, r.Code)
@@ -86,7 +88,7 @@ func TestUsers(t *testing.T) {
 	t.Run("register: already existing username", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
-		client := apitest.Client{Router: router(db, cfg), Token: nil}
+		client := apitest.Client{Router: boot.Router(cfg), Token: nil}
 
 		existing := userFactory.ValidRegistration(domain.UserRegistration(testUser))
 		existing.Email = "unique." + testUser.Email
@@ -101,7 +103,7 @@ func TestUsers(t *testing.T) {
 	t.Run("register: already existing email", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
-		client := apitest.Client{Router: router(db, cfg), Token: nil}
+		client := apitest.Client{Router: boot.Router(cfg), Token: nil}
 
 		existing := userFactory.ValidRegistration(domain.UserRegistration(testUser))
 		existing.Username = "unique"
@@ -128,13 +130,31 @@ func TestUsers(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				db, cfg := setup()
 				defer deleteUsers(db)
-				client := apitest.Client{Router: router(db, cfg), Token: nil}
+				client := apitest.Client{Router: boot.Router(cfg), Token: nil}
 
 				r := client.Post("/api/users", tc.payload)
 				require.Equal(t, http.StatusUnprocessableEntity, r.Code)
 				require.Equal(t, fmt.Sprintf("{\"error\":\"%s\"}", tc.want), r.Body.String())
 			})
 		}
+	})
+
+	t.Run("register: unexpected exception", func(t *testing.T) {
+		db, cfg := setup()
+		defer deleteUsers(db)
+
+		userRepo := func(tx *sqlx.Tx) appDb.UserRepoOps {
+			return &apitest.MockUserRepo{
+				UserRepo:          &appDb.UserRepo{Tx: tx},
+				MockExistsByEmail: func(email string) (bool, error) { return false, errors.New("BOOM!") },
+			}
+		}
+
+		client := apitest.Client{Router: boot.Router(cfg, boot.WithUserRepo(userRepo)), Token: nil}
+
+		r := client.Post("/api/users", testUser.Reg())
+		require.Equal(t, http.StatusInternalServerError, r.Code)
+		require.Equal(t, "{\"error\":\"BOOM!\"}", r.Body.String())
 	})
 
 	t.Run("login: validation", func(t *testing.T) {
@@ -151,7 +171,7 @@ func TestUsers(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				db, cfg := setup()
 				defer deleteUsers(db)
-				client := apitest.Client{Router: router(db, cfg), Token: nil}
+				client := apitest.Client{Router: boot.Router(cfg), Token: nil}
 
 				r := client.Post("/api/users/login", tc.payload)
 				require.Equal(t, http.StatusUnprocessableEntity, r.Code)
@@ -167,7 +187,7 @@ func TestUsers(t *testing.T) {
 		registered := userFactory.ValidRegistration(domain.UserRegistration(testUser))
 		saveUser(db, registered)
 
-		client := apitest.Client{Router: router(db, cfg), Token: &registered.Token}
+		client := apitest.Client{Router: boot.Router(cfg), Token: &registered.Token}
 		r := client.Get("/api/user")
 		require.Equal(t, http.StatusOK, r.Code)
 		require.Equal(t, rest.User{
@@ -179,8 +199,8 @@ func TestUsers(t *testing.T) {
 }
 
 func setup() (*sqlx.DB, *config.Config) {
-	cfg := readConfig()
-	return db(&cfg.DataSource), cfg
+	cfg := boot.ReadConfig()
+	return boot.Connect(&cfg.DataSource), cfg
 }
 
 func saveUser(db *sqlx.DB, user *domain.ValidUserRegistration) {

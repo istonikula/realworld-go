@@ -51,7 +51,7 @@ type User struct {
 	Image    *string `json:"image"`
 }
 
-func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
+func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr, userRepo appDb.NewUserRepo) {
 	router.GET("/api/user", RequireUser(), func(c *gin.Context) {
 		ctx := Context{c}
 		ctx.JSON(http.StatusOK, UserResponse{User{}.fromDomain(ctx.User())})
@@ -74,7 +74,7 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr) {
 
 		var u *domain.User
 		err = txMgr.Write(func(tx *sqlx.Tx) error {
-			repo := &appDb.UserRepo{Tx: tx}
+			repo := userRepo(tx)
 
 			validateUserSrv := domain.ValidateUserService{
 				Auth:             *auth,

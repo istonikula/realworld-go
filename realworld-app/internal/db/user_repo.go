@@ -9,15 +9,29 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type NewUserRepo func(tx *sqlx.Tx) UserRepoOps
+
+type UserRepoOps interface {
+	Create(*domain.ValidUserRegistration) (*domain.User, error)
+	ExistsByUsername(username string) (bool, error)
+	ExistsByEmail(email string) (bool, error)
+	FindById(id domain.UserId) (*domain.User, error)
+	FindByEmail(email string) (*domain.UserAndPassword, error)
+}
+
 type UserRepo struct {
 	Tx *sqlx.Tx
+}
+
+var UserRepoProvider NewUserRepo = func(tx *sqlx.Tx) UserRepoOps {
+	return &UserRepo{Tx: tx}
 }
 
 var tbl = table("users")
 
 const selectCols = "id, email, token, username, bio, image"
 
-func (r UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error) {
+func (r *UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error) {
 	const errCtx = "UserRepo#Create "
 	q := tbl.insert(
 		"id", "email", "token", "username", "password",
@@ -37,7 +51,7 @@ func (r UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error
 	return &user, nil
 }
 
-func (r UserRepo) ExistsByUsername(username string) (bool, error) {
+func (r *UserRepo) ExistsByUsername(username string) (bool, error) {
 	exists, err := tbl.queryIfExists(r.Tx, "username = $1", username)
 	if err != nil {
 		return false, fmt.Errorf("UserRepo#ExistsByUsername: %w", err)
@@ -45,7 +59,7 @@ func (r UserRepo) ExistsByUsername(username string) (bool, error) {
 	return exists, nil
 }
 
-func (r UserRepo) ExistsByEmail(email string) (bool, error) {
+func (r *UserRepo) ExistsByEmail(email string) (bool, error) {
 	exists, err := tbl.queryIfExists(r.Tx, "email = $1", email)
 	if err != nil {
 		return false, fmt.Errorf("UserRepo#ExistsByEmail: %w", err)
@@ -53,7 +67,7 @@ func (r UserRepo) ExistsByEmail(email string) (bool, error) {
 	return exists, nil
 }
 
-func (r UserRepo) FindById(id domain.UserId) (*domain.User, error) {
+func (r *UserRepo) FindById(id domain.UserId) (*domain.User, error) {
 	stmt, err := r.Tx.Preparex(fmt.Sprintf("SELECT %v FROM %v WHERE id = $1", selectCols, tbl))
 	if err != nil {
 		return nil, fmt.Errorf("UserRepo#FindById: %w", err)
@@ -72,7 +86,7 @@ func (r UserRepo) FindById(id domain.UserId) (*domain.User, error) {
 	return &user, nil
 }
 
-func (r UserRepo) FindByEmail(email string) (*domain.UserAndPassword, error) {
+func (r *UserRepo) FindByEmail(email string) (*domain.UserAndPassword, error) {
 	const errCtx = "UserRepo#FindByEmail "
 	stmt, err := r.Tx.Preparex(fmt.Sprintf("SELECT %v, password FROM %v WHERE email = $1", selectCols, tbl))
 	if err != nil {

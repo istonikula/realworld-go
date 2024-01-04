@@ -180,21 +180,31 @@ func TestUsers(t *testing.T) {
 		}
 	})
 
-	t.Run("current user is resolved from token", func(t *testing.T) {
+	t.Run("login: invalid password", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
+		client := apitest.Client{Router: boot.Router(cfg), Token: nil}
 
-		registered := userFactory.ValidRegistration(domain.UserRegistration(testUser))
-		saveUser(db, registered)
+		saveUser(db, userFactory.ValidRegistration(domain.UserRegistration(testUser)))
 
-		client := apitest.Client{Router: boot.Router(cfg), Token: &registered.Token}
+		login := testUser.Login()
+		login.Password = "invalid"
+		r := client.Post("/api/users/login", login)
+
+		require.Equal(t, http.StatusUnauthorized, r.Code)
+	})
+
+	t.Run("current user: invalid token", func(t *testing.T) {
+		db, cfg := setup()
+		defer deleteUsers(db)
+		client := apitest.Client{Router: boot.Router(cfg), Token: nil}
+
+		saveUser(db, userFactory.ValidRegistration(domain.UserRegistration(testUser)))
+
+		token := "invalid"
+		client.Token = &token
 		r := client.Get("/api/user")
-		require.Equal(t, http.StatusOK, r.Code)
-		require.Equal(t, rest.User{
-			Email:    registered.Email,
-			Token:    registered.Token,
-			Username: registered.Username,
-		}, readBody[rest.UserResponse](t, r).User)
+		require.Equal(t, http.StatusUnauthorized, r.Code)
 	})
 }
 

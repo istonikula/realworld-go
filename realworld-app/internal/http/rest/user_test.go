@@ -1,4 +1,4 @@
-package main
+package rest_test
 
 import (
 	"encoding/json"
@@ -209,7 +209,7 @@ func TestUsers(t *testing.T) {
 }
 
 func setup() (*sqlx.DB, *config.Config) {
-	cfg := boot.ReadConfig()
+	cfg := boot.ReadConfig("../../../config.yml")
 	return boot.Connect(&cfg.DataSource), cfg
 }
 

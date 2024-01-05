@@ -17,9 +17,14 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ReadConfig() *config.Config {
+func ReadConfig(path ...string) *config.Config {
+	p := "config.yml"
+	if len(path) > 0 {
+		p = path[0]
+	}
+
 	var cfg config.Config
-	if err := cleanenv.ReadConfig("config.yml", &cfg); err != nil {
+	if err := cleanenv.ReadConfig(p, &cfg); err != nil {
 		log.Fatal(err)
 	}
 	return &cfg

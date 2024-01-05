@@ -18,10 +18,25 @@ dir() {
 }
 
 test() {
+  local verbose=""
+
+  while getopts ":v" opt; do
+    case ${opt} in
+      v)
+        verbose="-v"
+        ;;
+      \?)
+        echo "test: Invalid Option: -$OPTARG" 1>&2
+        exit 1
+        ;;
+    esac
+  done
+  shift $((OPTIND -1))
+
   set +e
   for m in "${MODULES[@]}"; do
     pushd "$(dir "$m")"
-    go test -count 1 ./... | { grep -v 'no test files'; true; }
+    go test -count=1 ${verbose} ./... | { grep -v 'no test files'; true; }
     local r=$?
     if [[ $r == 1 ]]; then
       RETVAL=1
@@ -47,9 +62,10 @@ while getopts ":h" opt; do
   case ${opt} in
     h)
       echo "Usage:"
-      echo "  rw.sh -h    Display this help message"
-      echo "  rw.sh test  Test modules"
-      echo "  rw.sh tidy  Tidy modules"
+      echo "  rw.sh -h       Display this help message"
+      echo "  rw.sh test     Test modules"
+      echo "  rw.sh test -v  Test modules, verbose mode"
+      echo "  rw.sh tidy     Tidy modules"
       exit 0
       ;;
    \?)
@@ -63,7 +79,7 @@ shift $((OPTIND -1))
 CMD="$1"; shift
 case "$CMD" in
   test)
-    test
+    test "$@"
     ;;
   tidy)
     tidy

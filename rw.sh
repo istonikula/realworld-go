@@ -4,6 +4,7 @@ set -euo pipefail
 usage() {
   echo "Usage:"
   echo "  rw.sh -h       Display this help message"
+  echo "  rw.sh lint     Lint modules"
   echo "  rw.sh test     Test modules"
   echo "  rw.sh test -v  Test modules, verbose mode"
   echo "  rw.sh tidy     Tidy modules"
@@ -29,6 +30,20 @@ popd() {
 
 dir() {
   echo "$(cd "$(dirname "$1")" ; pwd -P)"
+}
+
+lint() {
+  set +e
+  for m in "${MODULES[@]}"; do
+    pushd "$(dir "$m")"
+    golangci-lint run
+    local r=$?
+    if [[ $r == 1 ]]; then
+      RETVAL=1
+    fi
+    popd
+  done
+  set -e
 }
 
 test() {
@@ -104,6 +119,9 @@ shift $((OPTIND -1))
 
 CMD="$1"; shift
 case "$CMD" in
+  lint)
+    lint
+    ;;
   test)
     test "$@"
     ;;

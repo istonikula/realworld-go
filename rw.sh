@@ -32,13 +32,33 @@ dir() {
   echo "$(cd "$(dirname "$1")" ; pwd -P)"
 }
 
-lint() {
+lint_cmd() {
+  echo "lint "$(pwd)""
+  golangci-lint run 
+}
+
+tidy_cmd() {
+  echo "tidy "$(pwd)""
+  go mod tidy
+}
+
+declare test_cmd_opts="-count=1"
+test_cmd() {
+  go test ${test_cmd_opts} ./... | { grep -v 'no test files'; true; }
+}
+
+update_cmd() {
+  echo "update and tidy "$(pwd)""
+  go get -t -u ./... && go mod tidy
+}
+
+run_in_module_dir() {
+  local cmd="$1"
   set +e
   for m in "${MODULES[@]}"; do
     pushd "$(dir "$m")"
-    golangci-lint run
-    local r=$?
-    if [[ $r == 1 ]]; then
+    $cmd
+    if [[ $? == 1 ]]; then
       RETVAL=1
     fi
     popd
@@ -47,12 +67,10 @@ lint() {
 }
 
 test() {
-  local verbose=""
-
   while getopts ":v" opt; do
     case ${opt} in
       v)
-        verbose="-v"
+        test_cmd_opts="${test_cmd_opts} -v"
         ;;
       \?)
         echo "test: Invalid Option: -$OPTARG" 1>&2
@@ -62,45 +80,7 @@ test() {
   done
   shift $((OPTIND -1))
 
-  set +e
-  for m in "${MODULES[@]}"; do
-    pushd "$(dir "$m")"
-    go test -count=1 ${verbose} ./... | { grep -v 'no test files'; true; }
-    local r=$?
-    if [[ $r == 1 ]]; then
-      RETVAL=1
-    fi
-    popd
-  done
-  set -e
-}
-
-tidy() {
-  set +e
-  for m in "${MODULES[@]}"; do
-    pushd "$(dir "$m")"
-    go mod tidy
-    local r=$?
-    if [[ $r == 1 ]]; then
-      RETVAL=1
-    fi
-    popd
-  done
-  set -e
-}
-
-update() {
-  set +e
-  for m in "${MODULES[@]}"; do
-    pushd "$(dir "$m")"
-    go get -t -u ./... && go mod tidy
-    local r=$?
-    if [[ $r == 1 ]]; then
-      RETVAL=1
-    fi
-    popd
-  done
-  set -e
+  run_in_module_dir test_cmd
 }
 
 while getopts ":h" opt; do
@@ -120,16 +100,16 @@ shift $((OPTIND -1))
 CMD="$1"; shift
 case "$CMD" in
   lint)
-    lint
+    run_in_module_dir lint_cmd
     ;;
   test)
     test "$@"
     ;;
   tidy)
-    tidy
+    run_in_module_dir tidy_cmd
     ;;
   update)
-    update
+    run_in_module_dir update_cmd
     ;;
   *)
     echo "Invalid command $CMD"

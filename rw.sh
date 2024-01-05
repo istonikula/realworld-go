@@ -47,6 +47,7 @@ test() {
 }
 
 tidy() {
+  set +e
   for m in "${MODULES[@]}"; do
     pushd "$(dir "$m")"
     go mod tidy
@@ -56,6 +57,21 @@ tidy() {
     fi
     popd
   done
+  set -e
+}
+
+update() {
+  set +e
+  for m in "${MODULES[@]}"; do
+    pushd "$(dir "$m")"
+    go get -t -u ./... && go mod tidy
+    local r=$?
+    if [[ $r == 1 ]]; then
+      RETVAL=1
+    fi
+    popd
+  done
+  set -e
 }
 
 while getopts ":h" opt; do
@@ -66,6 +82,7 @@ while getopts ":h" opt; do
       echo "  rw.sh test     Test modules"
       echo "  rw.sh test -v  Test modules, verbose mode"
       echo "  rw.sh tidy     Tidy modules"
+      echo "  rw.sh update   Update (and tidy) modules"
       exit 0
       ;;
    \?)
@@ -83,6 +100,9 @@ case "$CMD" in
     ;;
   tidy)
     tidy
+    ;;
+  update)
+    update
     ;;
   *)
     echo "Invalid command $CMD"

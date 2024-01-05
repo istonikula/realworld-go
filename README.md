@@ -1,0 +1,1 @@
+![realworld-go](https://github.com/istonikula/realworld-go/actions/workflows/main.yml/badge.svg)

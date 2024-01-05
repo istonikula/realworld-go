@@ -1,0 +1,59 @@
+name: main
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  version_go: 1.21
+  version_golangci_lint: v1.54
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.version_go }}
+          cache: false
+
+      # https://github.com/golangci/golangci-lint-action/issues/271#issuecomment-1564008642
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: ${{ env.version_golangci_lint }}
+          args: --help
+
+      - name: Lint modules
+        run: ./rw.sh lint
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.version_go }}
+          cache: false
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Init DB
+        run: |
+          docker-compose up -d
+          curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
+          chmod +x /usr/local/bin/dbmate
+          /usr/local/bin/dbmate up
+        env:
+          DATABASE_URL: postgres://postgres:secret@127.0.0.1:5432/realworld?sslmode=disable
+          DBMATE_MIGRATIONS_DIR: ./realworld-app/db/migrations
+          DBMATE_NO_DUMP_SCHEMA: true
+          DBMATE_WAIT: true
+          DBMATE_WAIT_TIMEOUT: 10s
+
+      - name: Run tests
+        run: ./rw.sh test
+

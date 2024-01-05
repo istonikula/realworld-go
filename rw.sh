@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+usage() {
+  echo "Usage:"
+  echo "  rw.sh -h       Display this help message"
+  echo "  rw.sh test     Test modules"
+  echo "  rw.sh test -v  Test modules, verbose mode"
+  echo "  rw.sh tidy     Tidy modules"
+  echo "  rw.sh update   Update (and tidy) modules"
+}
+
+if [[ $# -lt 1 ]]; then
+  usage
+  exit 1
+fi
+
 readarray -d '' MODULES < <(find . -name go.mod -print0)
 
 RETVAL=0
@@ -77,12 +91,7 @@ update() {
 while getopts ":h" opt; do
   case ${opt} in
     h)
-      echo "Usage:"
-      echo "  rw.sh -h       Display this help message"
-      echo "  rw.sh test     Test modules"
-      echo "  rw.sh test -v  Test modules, verbose mode"
-      echo "  rw.sh tidy     Tidy modules"
-      echo "  rw.sh update   Update (and tidy) modules"
+      usage
       exit 0
       ;;
    \?)

@@ -210,7 +210,7 @@ func TestUsers(t *testing.T) {
 
 func setup() (*sqlx.DB, *config.Config) {
 	cfg := boot.ReadConfig("../../../config.yml")
-	return boot.Connect(&cfg.DataSource), cfg
+	return boot.MustConnect(&cfg.DataSource), cfg
 }
 
 func saveUser(db *sqlx.DB, user *domain.ValidUserRegistration) {

@@ -42,15 +42,6 @@ func Migrate(c *config.DataSource) {
 	}
 }
 
-func Connect(c *config.DataSource) *sqlx.DB {
-	return sqlx.MustConnect(
-		"postgres",
-		fmt.Sprintf(
-			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-			c.Host, c.Port, c.User, c.Password, c.Name),
-	)
-}
-
 type repos struct{ User db.NewUserRepo }
 type repoOpt func(r *repos)
 
@@ -69,11 +60,20 @@ func Router(cfg *config.Config, opts ...repoOpt) *gin.Engine {
 	}
 
 	auth := &domain.Auth{Settings: domain.AuthSettings{TokenSecret: cfg.Auth.TokenSecret, TokenTTL: cfg.Auth.TokenTTL}}
-	txMgr := &db.TxMgr{DB: Connect(&cfg.DataSource)}
+	txMgr := &db.TxMgr{DB: MustConnect(&cfg.DataSource)}
 
 	r := gin.Default()
 	r.Use(rest.HandleLastError(), rest.ResolveUser(auth, txMgr))
 	rest.UserRoutes(r, auth, txMgr, repos.User)
 
 	return r
+}
+
+func MustConnect(c *config.DataSource) *sqlx.DB {
+	return sqlx.MustConnect(
+		"postgres",
+		fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			c.Host, c.Port, c.User, c.Password, c.Name),
+	)
 }

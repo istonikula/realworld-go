@@ -206,6 +206,17 @@ func TestUsers(t *testing.T) {
 		r := client.Get("/api/user")
 		require.Equal(t, http.StatusUnauthorized, r.Code)
 	})
+
+	t.Run("current user: user not found", func(t *testing.T) {
+		db, cfg := setup()
+		defer deleteUsers(db)
+
+		token := userFactory.ValidRegistration(domain.UserRegistration(testUser)).Token
+		client := apitest.Client{Router: boot.Router(cfg), Token: &token}
+
+		r := client.Get("/api/user")
+		require.Equal(t, http.StatusUnauthorized, r.Code)
+	})
 }
 
 func setup() (*sqlx.DB, *config.Config) {

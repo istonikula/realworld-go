@@ -31,7 +31,9 @@ func ResolveUser(auth *domain.Auth, txMgr *db.TxMgr) gin.HandlerFunc {
 				return err
 			}
 
-			ctx.SetUser(*user)
+			if user != nil {
+				ctx.SetUser(*user)
+			}
 			return nil
 		})
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"net"
@@ -19,7 +20,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	slog.Info("server listening at %v", lis.Addr())
+	slog.Info(fmt.Sprintf("server listening at %v", lis.Addr()))
 
 	if err = server.Router(cfg).Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

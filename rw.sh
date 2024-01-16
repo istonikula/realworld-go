@@ -42,7 +42,7 @@ tidy_cmd() {
   go mod tidy
 }
 
-declare test_cmd_opts="-count=1"
+declare test_cmd_opts="-count=1 -p=1"
 test_cmd() {
   go test ${test_cmd_opts} ./... | { grep -v 'no test files'; true; }
 }

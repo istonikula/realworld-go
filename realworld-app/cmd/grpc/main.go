@@ -8,6 +8,7 @@ import (
 
 	"github.com/istonikula/realworld-go/realworld-app/internal/boot"
 	"github.com/istonikula/realworld-go/realworld-app/internal/http/grpc/server"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -15,14 +16,17 @@ func main() {
 
 	boot.Migrate("../../db", &cfg.DataSource)
 
-	lis, err := net.Listen("tcp", ":8080")
+	if err := run(server.Router(cfg)); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(s *grpc.Server) error {
+	l, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return err
 	}
 
-	slog.Info(fmt.Sprintf("server listening at %v", lis.Addr()))
-
-	if err = server.Router(cfg).Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	slog.Info(fmt.Sprintf("listening and serving gRPC on %v", l.Addr()))
+	return s.Serve(l)
 }

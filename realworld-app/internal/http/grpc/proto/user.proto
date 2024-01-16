@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package user;
+
+import "google/protobuf/empty.proto";
+
+option go_package = ".;proto";
+
+service Users {
+  rpc CurrentUser (google.protobuf.Empty) returns (UserResponse);
+  rpc RegisterUser (UserRegistration) returns (UserResponse);
+  rpc Login (LoginRequest) returns (UserResponse);
+}
+
+message User {
+  string email = 1;
+  string token = 2;
+  string username = 3;
+  optional string bio = 4;
+  optional string image = 5;
+}
+
+message UserRegistration {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message UserResponse {
+  User user = 1;
+}

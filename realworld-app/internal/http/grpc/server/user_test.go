@@ -11,6 +11,7 @@ import (
 	"github.com/istonikula/realworld-go/realworld-app/internal/http/grpc/server/apitest"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 type TestUser struct {
@@ -41,30 +42,46 @@ var testUser = TestUser{
 
 func TestUsers(t *testing.T) {
 	t.Run("register and login", func(t *testing.T) {
-		ctx := context.Background()
-		db, cfg := setup()
-		defer deleteUsers(db)
+		ctx := setup()
+		defer ctx.teardown()
 
-		conn, cleanup := apitest.Server(ctx, server.Router(cfg))
-		defer cleanup()
-		client := proto.NewUsersClient(conn)
+		client := proto.NewUsersClient(ctx.conn)
 
-		r, _ := client.RegisterUser(ctx, testUser.Reg())
+		r, _ := client.RegisterUser(ctx.Context, testUser.Reg())
 		registered := r.User
 		require.Equal(t, testUser.Email, registered.Email)
 		require.Equal(t, testUser.Username, registered.Username)
 		require.NotNil(t, registered.Token)
 
-		r, _ = client.Login(ctx, testUser.Login())
+		r, _ = client.Login(ctx.Context, testUser.Login())
 		loggedIn := r.User
 		require.Equal(t, registered, loggedIn)
 	})
 }
 
-// NOTE: same in rest (different path)
-func setup() (*sqlx.DB, *config.Config) {
+type testCtx struct {
+	context.Context
+	db       *sqlx.DB
+	cfg      *config.Config
+	conn     *grpc.ClientConn
+	teardown func()
+}
+
+func setup() *testCtx {
+	ctx := context.Background()
 	cfg := boot.ReadConfig("../../../../config.yml")
-	return boot.MustConnect(&cfg.DataSource), cfg
+	db := boot.MustConnect(&cfg.DataSource)
+	conn, cleanup := apitest.Server(ctx, server.Router(cfg))
+	return &testCtx{
+		Context: ctx,
+		db:      db,
+		cfg:     cfg,
+		conn:    conn,
+		teardown: func() {
+			cleanup()
+			deleteUsers(db)
+		},
+	}
 }
 
 // NOTE: same in rest

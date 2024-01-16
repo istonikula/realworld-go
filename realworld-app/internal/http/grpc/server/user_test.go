@@ -12,6 +12,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type TestUser struct {
@@ -47,15 +50,18 @@ func TestUsers(t *testing.T) {
 
 		client := proto.NewUsersClient(ctx.conn)
 
-		r, _ := client.RegisterUser(ctx.Context, testUser.Reg())
+		r, _ := client.RegisterUser(ctx, testUser.Reg())
 		registered := r.User
 		require.Equal(t, testUser.Email, registered.Email)
 		require.Equal(t, testUser.Username, registered.Username)
 		require.NotNil(t, registered.Token)
 
-		r, _ = client.Login(ctx.Context, testUser.Login())
+		r, _ = client.Login(ctx, testUser.Login())
 		loggedIn := r.User
 		require.Equal(t, registered, loggedIn)
+
+		_, err := client.CurrentUser(ctx.Context, &emptypb.Empty{})
+		require.Equal(t, status.Code(err), codes.Unauthenticated)
 	})
 }
 

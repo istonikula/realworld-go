@@ -6,7 +6,7 @@ type ValidateUserService struct {
 	ExistsByEmail    ExistsByEmail
 }
 
-func (s *ValidateUserService) ValidateUser(r *UserRegistration) (*ValidUserRegistration, error) {
+func (s *ValidateUserService) ValidateUser(r UserRegistration) (*ValidUserRegistration, error) {
 	if exists, err := s.ExistsByEmail(r.Email); err != nil {
 		return nil, err
 	} else if exists {

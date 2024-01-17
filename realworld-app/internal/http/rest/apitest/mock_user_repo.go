@@ -10,14 +10,14 @@ var _ db.UserRepoOps = (*MockUserRepo)(nil)
 type MockUserRepo struct {
 	*db.UserRepo
 
-	MockCreate           func(*domain.ValidUserRegistration) (*domain.User, error)
+	MockCreate           func(domain.ValidUserRegistration) (*domain.User, error)
 	MockExistsByUsername func(username string) (bool, error)
 	MockExistsByEmail    func(email string) (bool, error)
 	MockFindById         func(id domain.UserId) (*domain.User, error)
 	MockFindByEmail      func(email string) (*domain.UserAndPassword, error)
 }
 
-func (r *MockUserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error) {
+func (r *MockUserRepo) Create(reg domain.ValidUserRegistration) (*domain.User, error) {
 	if r.MockCreate != nil {
 		return r.MockCreate(reg)
 	}

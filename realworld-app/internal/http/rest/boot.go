@@ -8,7 +8,7 @@ import (
 	domain "github.com/istonikula/realworld-go/realworld-domain"
 )
 
-func Router(cfg *config.Config, opt ...boot.RouterOption) *gin.Engine {
+func Router(cfg config.Config, opt ...boot.RouterOption) *gin.Engine {
 	opts := &boot.RouterOptions{
 		UserRepo: db.UserRepoProvider,
 	}
@@ -17,7 +17,7 @@ func Router(cfg *config.Config, opt ...boot.RouterOption) *gin.Engine {
 	}
 
 	auth := &domain.Auth{Settings: domain.AuthSettings{TokenSecret: cfg.Auth.TokenSecret, TokenTTL: cfg.Auth.TokenTTL}}
-	txMgr := &db.TxMgr{DB: boot.MustConnect(&cfg.DataSource)}
+	txMgr := &db.TxMgr{DB: boot.MustConnect(cfg.DataSource)}
 
 	r := gin.Default()
 	r.Use(HandleLastError(), ResolveUser(auth, txMgr))

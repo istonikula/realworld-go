@@ -1,10 +1,11 @@
 package domain_test
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 
-	"github.com/istonikula/realworld-go/realworld-domain"
+	"github.com/stretchr/testify/require"
+
+	domain "github.com/istonikula/realworld-go/realworld-domain"
 	"github.com/istonikula/realworld-go/realworld-domain/test-support/fixture"
 	"github.com/istonikula/realworld-go/realworld-domain/test-support/stub"
 )
@@ -27,7 +28,7 @@ func TestRegisterUserUseCase(t *testing.T) {
 
 	t.Run("email already taken", func(t *testing.T) {
 		_, err := domain.RegisterUserUseCase{
-			Validate:   stub.UserStub.ValidateUserError(domain.EmailAlreadyTaken),
+			Validate:   stub.UserStub.ValidateUserError(*domain.EmailAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
 		}.Run(reg)
 		require.Equal(t, domain.EmailAlreadyTaken, err)
@@ -35,7 +36,7 @@ func TestRegisterUserUseCase(t *testing.T) {
 
 	t.Run("username already taken", func(t *testing.T) {
 		_, err := domain.RegisterUserUseCase{
-			Validate:   stub.UserStub.ValidateUserError(domain.UsernameAlreadyTaken),
+			Validate:   stub.UserStub.ValidateUserError(*domain.UsernameAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
 		}.Run(reg)
 		require.Equal(t, domain.UsernameAlreadyTaken, err)
@@ -54,14 +55,14 @@ func TestLoginUserUseCase(t *testing.T) {
 	reg := jane.Registration()
 
 	t.Run("login", func(t *testing.T) {
-		exp := userFactory.UserAndPassword(*reg)
+		exp := userFactory.UserAndPassword(reg)
 
 		act, err := domain.LoginUserUseCase{
 			Auth: stub.UserStub.Auth,
 			GetUser: func(email string) (*domain.UserAndPassword, error) {
-				return exp, nil
+				return &exp, nil
 			},
-		}.Run(&domain.Login{
+		}.Run(domain.Login{
 			Email:    reg.Email,
 			Password: reg.Password,
 		})
@@ -75,7 +76,7 @@ func TestLoginUserUseCase(t *testing.T) {
 			GetUser: func(email string) (*domain.UserAndPassword, error) {
 				return nil, nil
 			},
-		}.Run(&domain.Login{
+		}.Run(domain.Login{
 			Email:    reg.Email,
 			Password: reg.Password,
 		})
@@ -87,9 +88,10 @@ func TestLoginUserUseCase(t *testing.T) {
 		act, err := domain.LoginUserUseCase{
 			Auth: stub.UserStub.Auth,
 			GetUser: func(email string) (*domain.UserAndPassword, error) {
-				return userFactory.UserAndPassword(*reg), nil
+				u := userFactory.UserAndPassword(reg)
+				return &u, nil
 			},
-		}.Run(&domain.Login{
+		}.Run(domain.Login{
 			Email:    reg.Email,
 			Password: "invalid",
 		})

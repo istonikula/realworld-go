@@ -6,15 +6,16 @@ import (
 	"net/url"
 
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
-	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/istonikula/realworld-go/realworld-app/internal/config"
 	"github.com/istonikula/realworld-go/realworld-app/internal/db"
 	"github.com/jmoiron/sqlx"
+
+	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	_ "github.com/lib/pq"
 )
 
-func ReadConfig(path ...string) *config.Config {
+func ReadConfig(path ...string) config.Config {
 	p := "config.yml"
 	if len(path) > 0 {
 		p = path[0]
@@ -24,10 +25,10 @@ func ReadConfig(path ...string) *config.Config {
 	if err := cleanenv.ReadConfig(p, &cfg); err != nil {
 		log.Fatal(err)
 	}
-	return &cfg
+	return cfg
 }
 
-func Migrate(path string, c *config.DataSource) {
+func Migrate(path string, c config.DataSource) {
 	u, _ := url.Parse(fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		c.MigrateUser, c.MigratePassword, c.Host, c.Port, c.Name,
@@ -43,7 +44,7 @@ func Migrate(path string, c *config.DataSource) {
 	}
 }
 
-func MustConnect(c *config.DataSource) *sqlx.DB {
+func MustConnect(c config.DataSource) *sqlx.DB {
 	return sqlx.MustConnect(
 		"postgres",
 		fmt.Sprintf(

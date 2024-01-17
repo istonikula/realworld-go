@@ -12,7 +12,7 @@ import (
 type NewUserRepo func(tx *sqlx.Tx) UserRepoOps
 
 type UserRepoOps interface {
-	Create(*domain.ValidUserRegistration) (*domain.User, error)
+	Create(domain.ValidUserRegistration) (*domain.User, error)
 	ExistsByUsername(username string) (bool, error)
 	ExistsByEmail(email string) (bool, error)
 	FindById(id domain.UserId) (*domain.User, error)
@@ -31,7 +31,7 @@ var tbl = table("users")
 
 const selectCols = "id, email, token, username, bio, image"
 
-func (r *UserRepo) Create(reg *domain.ValidUserRegistration) (*domain.User, error) {
+func (r *UserRepo) Create(reg domain.ValidUserRegistration) (*domain.User, error) {
 	const errCtx = "UserRepo#Create "
 	q := tbl.insert(
 		"id", "email", "token", "username", "password",

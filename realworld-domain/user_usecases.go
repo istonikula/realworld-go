@@ -27,21 +27,21 @@ type RegisterUserUseCase struct {
 	CreateUser CreateUser
 }
 
-func (u RegisterUserUseCase) Run(r *UserRegistration) (*User, error) {
+func (u RegisterUserUseCase) Run(r UserRegistration) (*User, error) {
 	valid, err := u.Validate(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return u.CreateUser(valid)
+	return u.CreateUser(*valid)
 }
 
 type LoginUserUseCase struct {
-	Auth    Auth
+	Auth    *Auth
 	GetUser GetUserByEmail
 }
 
-func (u LoginUserUseCase) Run(l *Login) (*User, error) {
+func (u LoginUserUseCase) Run(l Login) (*User, error) {
 	found, err := u.GetUser(l.Email)
 	if err != nil {
 		return nil, err

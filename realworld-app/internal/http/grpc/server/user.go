@@ -47,7 +47,7 @@ func (s *server) RegisterUser(ctx context.Context, dto *proto.UserRegistration) 
 		u, err = domain.RegisterUserUseCase{
 			Validate:   validateUserSrv.ValidateUser,
 			CreateUser: repo.Create,
-		}.Run(&domain.UserRegistration{
+		}.Run(domain.UserRegistration{
 			Username: dto.Username,
 			Email:    dto.Email,
 			Password: dto.Password,
@@ -73,9 +73,9 @@ func (s *server) Login(ctx context.Context, dto *proto.LoginRequest) (*proto.Use
 		repo := &appDb.UserRepo{Tx: tx}
 
 		u, err = domain.LoginUserUseCase{
-			Auth:    *s.auth,
+			Auth:    s.auth,
 			GetUser: repo.FindByEmail,
-		}.Run(&domain.Login{
+		}.Run(domain.Login{
 			Email:    dto.Email,
 			Password: dto.Password,
 		})

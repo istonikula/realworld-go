@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Router(cfg *config.Config, opt ...boot.RouterOption) *grpc.Server {
+func Router(cfg config.Config, opt ...boot.RouterOption) *grpc.Server {
 	opts := &boot.RouterOptions{
 		UserRepo: db.UserRepoProvider,
 	}
@@ -18,7 +18,7 @@ func Router(cfg *config.Config, opt ...boot.RouterOption) *grpc.Server {
 	}
 
 	auth := &domain.Auth{Settings: domain.AuthSettings{TokenSecret: cfg.Auth.TokenSecret, TokenTTL: cfg.Auth.TokenTTL}}
-	txMgr := &db.TxMgr{DB: boot.MustConnect(&cfg.DataSource)}
+	txMgr := &db.TxMgr{DB: boot.MustConnect(cfg.DataSource)}
 
 	s := grpc.NewServer(grpc.ChainUnaryInterceptor(ResolveUser(auth, txMgr), RequireUser()))
 	proto.RegisterUsersServer(s, UserRoutes(auth, txMgr, opts.UserRepo))

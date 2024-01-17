@@ -68,7 +68,7 @@ func TestUsers(t *testing.T) {
 type testCtx struct {
 	context.Context
 	db       *sqlx.DB
-	cfg      *config.Config
+	cfg      config.Config
 	conn     *grpc.ClientConn
 	teardown func()
 }
@@ -76,7 +76,7 @@ type testCtx struct {
 func setup() *testCtx {
 	ctx := context.Background()
 	cfg := boot.ReadConfig("../../../../config.yml")
-	db := boot.MustConnect(&cfg.DataSource)
+	db := boot.MustConnect(cfg.DataSource)
 	conn, cleanup := apitest.Server(ctx, server.Router(cfg))
 	return &testCtx{
 		Context: ctx,

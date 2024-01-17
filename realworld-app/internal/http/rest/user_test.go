@@ -219,12 +219,12 @@ func TestUsers(t *testing.T) {
 	})
 }
 
-func setup() (*sqlx.DB, *config.Config) {
+func setup() (*sqlx.DB, config.Config) {
 	cfg := boot.ReadConfig("../../../config.yml")
-	return boot.MustConnect(&cfg.DataSource), cfg
+	return boot.MustConnect(cfg.DataSource), cfg
 }
 
-func saveUser(db *sqlx.DB, user *domain.ValidUserRegistration) {
+func saveUser(db *sqlx.DB, user domain.ValidUserRegistration) {
 	txMgr := appDb.TxMgr{DB: db}
 	_ = txMgr.Write(func(tx *sqlx.Tx) error {
 		var repo = appDb.UserRepo{Tx: tx}

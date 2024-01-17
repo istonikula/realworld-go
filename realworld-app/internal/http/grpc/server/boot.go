@@ -20,7 +20,7 @@ func Router(cfg config.Config, opt ...boot.RouterOption) *grpc.Server {
 	auth := &domain.Auth{Settings: domain.AuthSettings{TokenSecret: cfg.Auth.TokenSecret, TokenTTL: cfg.Auth.TokenTTL}}
 	txMgr := &db.TxMgr{DB: boot.MustConnect(cfg.DataSource)}
 
-	s := grpc.NewServer(grpc.ChainUnaryInterceptor(ResolveUser(auth, txMgr), RequireUser()))
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor(HandleError(), ResolveUser(auth, txMgr), RequireUser()))
 	proto.RegisterUsersServer(s, UserRoutes(auth, txMgr, opts.UserRepo))
 
 	return s

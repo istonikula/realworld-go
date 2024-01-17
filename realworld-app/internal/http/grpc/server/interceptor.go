@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
 
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/istonikula/realworld-go/realworld-app/internal/db"
 	"github.com/istonikula/realworld-go/realworld-app/internal/http/grpc/proto"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
@@ -65,5 +67,25 @@ func RequireUser() grpc.UnaryServerInterceptor {
 		}
 
 		return handler(ctx, req)
+	}
+}
+
+func HandleError() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+		resp, err = handler(ctx, req)
+		if err == nil {
+			return
+		}
+
+		var regErr *domain.UserRegistrationError
+		var vErrs validation.Errors
+		switch {
+		case errors.As(err, &regErr):
+			err = status.Error(codes.AlreadyExists, err.Error())
+		case errors.As(err, &vErrs):
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+
+		return
 	}
 }

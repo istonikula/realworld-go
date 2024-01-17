@@ -32,8 +32,6 @@ func (s *server) CurrentUser(ctx context.Context, _ *emptypb.Empty) (*proto.User
 }
 
 func (s *server) RegisterUser(ctx context.Context, dto *proto.UserRegistration) (*proto.UserResponse, error) {
-	// TODO bind error, can dto be nil?
-
 	err := dto.Validate()
 	if err != nil {
 		return nil, err

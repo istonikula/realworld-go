@@ -23,6 +23,19 @@ type TestUser struct {
 	Password string
 }
 
+func (u TestUser) WithUsername(s string) TestUser {
+	u.Username = s
+	return u
+}
+func (u TestUser) WithEmail(s string) TestUser {
+	u.Email = s
+	return u
+}
+func (u TestUser) WithPassword(s string) TestUser {
+	u.Password = s
+	return u
+}
+
 func (u TestUser) Reg() *proto.UserRegistration {
 	return &proto.UserRegistration{
 		Username: u.Username,
@@ -61,11 +74,37 @@ func TestUsers(t *testing.T) {
 		require.Equal(t, registered, loggedIn)
 
 		_, err := client.CurrentUser(ctx.Context, &emptypb.Empty{})
-		require.Equal(t, status.Code(err), codes.Unauthenticated)
+		require.Equal(t, codes.Unauthenticated, status.Code(err))
 
 		r, _ = client.CurrentUser(server.NewContextWithToken(ctx.Context, loggedIn.Token), &emptypb.Empty{})
 		current := r.User
 		require.Equal(t, loggedIn, current)
+	})
+
+	t.Run("register: validation", func(t *testing.T) {
+		tcs := map[string]struct {
+			payload     *proto.UserRegistration
+			wantCode    codes.Code
+			wantMessage string
+		}{
+			"missing payload":  {nil, codes.Internal, "grpc: error while marshaling: proto: Marshal called with nil"},
+			"missing username": {testUser.WithUsername("").Reg(), codes.InvalidArgument, "username: cannot be blank."},
+			"missing email":    {testUser.WithEmail("").Reg(), codes.InvalidArgument, "email: cannot be blank."},
+			"invalid email":    {testUser.WithEmail("invalid").Reg(), codes.InvalidArgument, "email: must be a valid email address."},
+			"missing password": {testUser.WithPassword("").Reg(), codes.InvalidArgument, "password: cannot be blank."},
+		}
+		for name, tc := range tcs {
+			t.Run(name, func(t *testing.T) {
+				ctx := setup()
+				defer ctx.teardown()
+
+				client := proto.NewUsersClient(ctx.conn)
+
+				_, err := client.RegisterUser(ctx, tc.payload)
+				require.Equal(t, tc.wantCode.String(), status.Code(err).String())
+				require.Equal(t, tc.wantMessage, status.Convert(err).Message())
+			})
+		}
 	})
 }
 

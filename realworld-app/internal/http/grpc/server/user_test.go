@@ -89,12 +89,7 @@ func setup() *testCtx {
 		conn:    conn,
 		teardown: func() {
 			cleanup()
-			deleteUsers(db)
+			db.MustExec("DELETE FROM users")
 		},
 	}
-}
-
-// NOTE: same in rest
-func deleteUsers(db *sqlx.DB) {
-	db.MustExec("DELETE FROM users")
 }

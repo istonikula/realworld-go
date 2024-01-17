@@ -43,15 +43,6 @@ func Migrate(path string, c *config.DataSource) {
 	}
 }
 
-type Repos struct{ User db.NewUserRepo }
-type RepoOpt func(r *Repos)
-
-func WithUserRepo(u db.NewUserRepo) RepoOpt {
-	return func(r *Repos) {
-		r.User = u
-	}
-}
-
 func MustConnect(c *config.DataSource) *sqlx.DB {
 	return sqlx.MustConnect(
 		"postgres",
@@ -59,4 +50,16 @@ func MustConnect(c *config.DataSource) *sqlx.DB {
 			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 			c.Host, c.Port, c.User, c.Password, c.Name),
 	)
+}
+
+type RouterOptions struct {
+	UserRepo db.NewUserRepo
+}
+
+type RouterOption func(*RouterOptions)
+
+func UserRepo(u db.NewUserRepo) RouterOption {
+	return func(o *RouterOptions) {
+		o.UserRepo = u
+	}
 }

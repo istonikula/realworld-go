@@ -54,7 +54,7 @@ func TestUsers(t *testing.T) {
 	t.Run("register and login", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
-		client := apitest.Client{Router: rest.Router(cfg), Token: nil}
+		client := apitest.NewClient(rest.Router(cfg))
 
 		r := client.Post("/api/users", testUser.Reg())
 		require.Equal(t, http.StatusCreated, r.Code)
@@ -88,7 +88,7 @@ func TestUsers(t *testing.T) {
 	t.Run("register: already existing username", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
-		client := apitest.Client{Router: rest.Router(cfg), Token: nil}
+		client := apitest.NewClient(rest.Router(cfg))
 
 		existing := userFactory.ValidRegistration(domain.UserRegistration(testUser))
 		existing.Email = "unique." + testUser.Email
@@ -103,7 +103,7 @@ func TestUsers(t *testing.T) {
 	t.Run("register: already existing email", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
-		client := apitest.Client{Router: rest.Router(cfg), Token: nil}
+		client := apitest.NewClient(rest.Router(cfg))
 
 		existing := userFactory.ValidRegistration(domain.UserRegistration(testUser))
 		existing.Username = "unique"
@@ -130,7 +130,7 @@ func TestUsers(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				db, cfg := setup()
 				defer deleteUsers(db)
-				client := apitest.Client{Router: rest.Router(cfg), Token: nil}
+				client := apitest.NewClient(rest.Router(cfg))
 
 				r := client.Post("/api/users", tc.payload)
 				require.Equal(t, http.StatusUnprocessableEntity, r.Code)
@@ -150,7 +150,7 @@ func TestUsers(t *testing.T) {
 			}
 		}
 
-		client := apitest.Client{Router: rest.Router(cfg, boot.WithUserRepo(userRepo)), Token: nil}
+		client := apitest.NewClient(rest.Router(cfg, boot.UserRepo(userRepo)))
 
 		r := client.Post("/api/users", testUser.Reg())
 		require.Equal(t, http.StatusInternalServerError, r.Code)
@@ -171,7 +171,7 @@ func TestUsers(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				db, cfg := setup()
 				defer deleteUsers(db)
-				client := apitest.Client{Router: rest.Router(cfg), Token: nil}
+				client := apitest.NewClient(rest.Router(cfg))
 
 				r := client.Post("/api/users/login", tc.payload)
 				require.Equal(t, http.StatusUnprocessableEntity, r.Code)
@@ -183,7 +183,7 @@ func TestUsers(t *testing.T) {
 	t.Run("login: invalid password", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
-		client := apitest.Client{Router: rest.Router(cfg), Token: nil}
+		client := apitest.NewClient(rest.Router(cfg))
 
 		saveUser(db, userFactory.ValidRegistration(domain.UserRegistration(testUser)))
 
@@ -197,7 +197,7 @@ func TestUsers(t *testing.T) {
 	t.Run("current user: invalid token", func(t *testing.T) {
 		db, cfg := setup()
 		defer deleteUsers(db)
-		client := apitest.Client{Router: rest.Router(cfg), Token: nil}
+		client := apitest.NewClient(rest.Router(cfg))
 
 		saveUser(db, userFactory.ValidRegistration(domain.UserRegistration(testUser)))
 
@@ -212,7 +212,7 @@ func TestUsers(t *testing.T) {
 		defer deleteUsers(db)
 
 		token := userFactory.ValidRegistration(domain.UserRegistration(testUser)).Token
-		client := apitest.Client{Router: rest.Router(cfg), Token: &token}
+		client := apitest.NewClient(rest.Router(cfg), apitest.Token(token))
 
 		r := client.Get("/api/user")
 		require.Equal(t, http.StatusUnauthorized, r.Code)

@@ -62,6 +62,10 @@ func TestUsers(t *testing.T) {
 
 		_, err := client.CurrentUser(ctx.Context, &emptypb.Empty{})
 		require.Equal(t, status.Code(err), codes.Unauthenticated)
+
+		r, _ = client.CurrentUser(server.NewContextWithToken(ctx.Context, loggedIn.Token), &emptypb.Empty{})
+		current := r.User
+		require.Equal(t, loggedIn, current)
 	})
 }
 

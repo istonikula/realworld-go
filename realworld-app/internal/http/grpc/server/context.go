@@ -19,18 +19,23 @@ func NewContextWithUser(ctx context.Context, user *domain.User) context.Context 
 	return context.WithValue(ctx, userKey{}, user)
 }
 
-func TokenFromContext(ctx context.Context) string {
-	const prefix = "Token "
+const authKey = "authorization"
+const tokenPrefix = "Token "
 
+func TokenFromContext(ctx context.Context) string {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return ""
 	}
 
-	auth := md["authorization"]
+	auth := md[authKey]
 	if len(auth) < 1 {
 		return ""
 	}
 
-	return strings.TrimPrefix(auth[0], prefix)
+	return strings.TrimPrefix(auth[0], tokenPrefix)
+}
+
+func NewContextWithToken(ctx context.Context, token string) context.Context {
+	return metadata.AppendToOutgoingContext(ctx, authKey, tokenPrefix+token)
 }

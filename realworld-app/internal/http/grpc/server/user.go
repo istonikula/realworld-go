@@ -9,6 +9,7 @@ import (
 	"github.com/istonikula/realworld-go/realworld-app/internal/http/grpc/proto"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
 	"github.com/jmoiron/sqlx"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func UserRoutes(auth *domain.Auth, txMgr *appDb.TxMgr, userRepo appDb.NewUserRepo) proto.UsersServer {
@@ -24,6 +25,10 @@ type server struct {
 	auth     *domain.Auth
 	txMgr    *appDb.TxMgr
 	userRepo appDb.NewUserRepo
+}
+
+func (s *server) CurrentUser(ctx context.Context, _ *emptypb.Empty) (*proto.UserResponse, error) {
+	return UserResponse.fromDomain(UserFromContext(ctx)), nil
 }
 
 func (s *server) RegisterUser(ctx context.Context, dto *proto.UserRegistration) (*proto.UserResponse, error) {

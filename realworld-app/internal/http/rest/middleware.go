@@ -74,15 +74,15 @@ func HandleLastError() gin.HandlerFunc {
 			return
 		}
 
-		var bindErr *BindError
-		var regErr *domain.UserRegistrationError
-		var vErrs validation.Errors
+		var errBind *BindError
+		var errReg *domain.UserRegistrationError
+		var errV validation.Errors
 		switch {
-		case errors.As(err, &bindErr):
+		case errors.As(err, &errBind):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case errors.As(err, &regErr):
+		case errors.As(err, &errReg):
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-		case errors.As(err, &vErrs):
+		case errors.As(err, &errV):
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

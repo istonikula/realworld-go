@@ -11,6 +11,7 @@ import (
 	"github.com/istonikula/realworld-go/realworld-app/internal/http/grpc/server/apitest"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -83,15 +84,36 @@ func TestUsers(t *testing.T) {
 
 	t.Run("register: validation", func(t *testing.T) {
 		tcs := map[string]struct {
-			payload     *proto.UserRegistration
-			wantCode    codes.Code
-			wantMessage string
+			payload        *proto.UserRegistration
+			wantCode       codes.Code
+			wantMessage    string
+			wantViolations []fv
 		}{
-			"missing payload":  {nil, codes.Internal, "grpc: error while marshaling: proto: Marshal called with nil"},
-			"missing username": {testUser.WithUsername("").Reg(), codes.InvalidArgument, "username: cannot be blank."},
-			"missing email":    {testUser.WithEmail("").Reg(), codes.InvalidArgument, "email: cannot be blank."},
-			"invalid email":    {testUser.WithEmail("invalid").Reg(), codes.InvalidArgument, "email: must be a valid email address."},
-			"missing password": {testUser.WithPassword("").Reg(), codes.InvalidArgument, "password: cannot be blank."},
+			"missing payload": {nil, codes.Internal, "grpc: error while marshaling: proto: Marshal called with nil", nil},
+			"missing username": {
+				testUser.WithUsername("").Reg(),
+				codes.InvalidArgument,
+				"username: cannot be blank.",
+				[]fv{{"username", "cannot be blank"}},
+			},
+			"missing email": {
+				testUser.WithEmail("").Reg(),
+				codes.InvalidArgument,
+				"email: cannot be blank.",
+				[]fv{{"email", "cannot be blank"}},
+			},
+			"invalid email": {
+				testUser.WithEmail("invalid").Reg(),
+				codes.InvalidArgument,
+				"email: must be a valid email address.",
+				[]fv{{"email", "must be a valid email address"}},
+			},
+			"missing password": {
+				testUser.WithPassword("").Reg(),
+				codes.InvalidArgument,
+				"password: cannot be blank.",
+				[]fv{{"password", "cannot be blank"}},
+			},
 		}
 		for name, tc := range tcs {
 			t.Run(name, func(t *testing.T) {
@@ -102,10 +124,33 @@ func TestUsers(t *testing.T) {
 
 				_, err := client.RegisterUser(ctx, tc.payload)
 				require.Equal(t, tc.wantCode.String(), status.Code(err).String())
-				require.Equal(t, tc.wantMessage, status.Convert(err).Message())
+				st := status.Convert(err)
+				require.Equal(t, tc.wantMessage, st.Message())
+				if tc.wantViolations != nil {
+					require.Equal(t, tc.wantViolations, fieldViolations(st))
+				}
 			})
 		}
 	})
+}
+
+type fv struct {
+	field string
+	desc  string
+}
+
+func fieldViolations(st *status.Status) []fv {
+	var fvs []fv
+	for _, detail := range st.Details() {
+		switch t := detail.(type) {
+		case *errdetails.BadRequest:
+			for _, violation := range t.GetFieldViolations() {
+				v := fv{field: violation.GetField(), desc: violation.GetDescription()}
+				fvs = append(fvs, v)
+			}
+		}
+	}
+	return fvs
 }
 
 type testCtx struct {

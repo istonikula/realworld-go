@@ -1,14 +1,15 @@
-package rest
+package server
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/istonikula/realworld-go/realworld-app/internal/boot"
 	"github.com/istonikula/realworld-go/realworld-app/internal/config"
 	"github.com/istonikula/realworld-go/realworld-app/internal/db"
+	"github.com/istonikula/realworld-go/realworld-app/internal/http/grpc/proto"
 	domain "github.com/istonikula/realworld-go/realworld-domain"
+	"google.golang.org/grpc"
 )
 
-func Router(cfg config.Config, opt ...boot.RouterOption) *gin.Engine {
+func Router(cfg config.Config, opt ...boot.RouterOption) *grpc.Server {
 	opts := &boot.RouterOptions{
 		UserRepo: db.UserRepoProvider,
 	}
@@ -19,9 +20,8 @@ func Router(cfg config.Config, opt ...boot.RouterOption) *gin.Engine {
 	auth := &domain.Auth{Settings: domain.AuthSettings{TokenSecret: cfg.Auth.TokenSecret, TokenTTL: cfg.Auth.TokenTTL}}
 	txMgr := &db.TxMgr{DB: boot.MustConnect(cfg.DataSource)}
 
-	r := gin.Default()
-	r.Use(HandleLastError(), ResolveUser(auth, txMgr))
-	UserRoutes(r, auth, txMgr, opts.UserRepo)
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor(HandleError(), ResolveUser(auth, txMgr), RequireUser()))
+	proto.RegisterUsersServer(s, UserRoutes(auth, txMgr, opts.UserRepo))
 
-	return r
+	return s
 }

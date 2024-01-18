@@ -4,6 +4,7 @@ set -euo pipefail
 usage() {
   echo "Usage:"
   echo "  rw.sh -h       Display this help message"
+  echo "  rw.sh proto    Parse proto files and generate go files"
   echo "  rw.sh lint     Lint modules"
   echo "  rw.sh test     Test modules"
   echo "  rw.sh test -v  Test modules, verbose mode"
@@ -32,6 +33,20 @@ dir() {
   echo "$(cd "$(dirname "$1")" ; pwd -P)"
 }
 
+proto_cmd() {
+  local protos
+  readarray -d '' protos < <(find . -name *.proto -print0)
+  for p in "${protos[@]}"; do
+    pushd "$(dir "$p")"
+    local f="$(basename "$p")"
+    protoc \
+      --go_out=. --go_opt=paths=source_relative \
+      --go_opt=paths=source_relative --go_opt=paths=source_relative \
+      "$f"
+    popd
+  done
+}
+
 lint_cmd() {
   echo "lint "$(pwd)""
   golangci-lint run 
@@ -42,7 +57,7 @@ tidy_cmd() {
   go mod tidy
 }
 
-declare test_cmd_opts="-count=1"
+declare test_cmd_opts="-count=1 -p=1"
 test_cmd() {
   go test ${test_cmd_opts} ./... | { grep -v 'no test files'; true; }
 }
@@ -99,6 +114,9 @@ shift $((OPTIND -1))
 
 CMD="$1"; shift
 case "$CMD" in
+  proto)
+    proto_cmd
+    ;;
   lint)
     run_in_module_dir lint_cmd
     ;;

@@ -10,7 +10,7 @@ import (
 func main() {
 	cfg := boot.ReadConfig("../../config.yml")
 
-	boot.Migrate("../../db", &cfg.DataSource)
+	boot.Migrate("../../db", cfg.DataSource)
 
 	if err := rest.Router(cfg).Run(); err != nil {
 		log.Fatal(err)

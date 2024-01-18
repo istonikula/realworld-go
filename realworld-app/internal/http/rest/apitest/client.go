@@ -14,6 +14,24 @@ type Client struct {
 	Token  *string
 }
 
+type ClientOption func(c *Client)
+
+func Token(s string) ClientOption {
+	return func(c *Client) {
+		c.Token = &s
+	}
+}
+
+func NewClient(router *gin.Engine, opt ...ClientOption) *Client {
+	client := &Client{Router: router}
+
+	for _, o := range opt {
+		o(client)
+	}
+
+	return client
+}
+
 func (c Client) Get(path string) *httptest.ResponseRecorder {
 	r, _ := http.NewRequest("GET", path, nil)
 	c.maybeToken(r)

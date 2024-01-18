@@ -85,7 +85,7 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr, userR
 			u, err = domain.RegisterUserUseCase{
 				Validate:   validateUserSrv.ValidateUser,
 				CreateUser: repo.Create,
-			}.Run(&domain.UserRegistration{
+			}.Run(domain.UserRegistration{
 				Username: dto.Username,
 				Email:    dto.Email,
 				Password: dto.Password,
@@ -121,9 +121,9 @@ func UserRoutes(router *gin.Engine, auth *domain.Auth, txMgr *appDb.TxMgr, userR
 			repo := &appDb.UserRepo{Tx: tx}
 
 			u, err = domain.LoginUserUseCase{
-				Auth:    *auth,
+				Auth:    auth,
 				GetUser: repo.FindByEmail,
-			}.Run(&domain.Login{
+			}.Run(domain.Login{
 				Email:    dto.Email,
 				Password: dto.Password,
 			})

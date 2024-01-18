@@ -75,7 +75,7 @@ func HandleLastError() gin.HandlerFunc {
 		}
 
 		var errBind *BindError
-		var errReg *domain.UserRegistrationError
+		var errReg domain.UserRegistrationError
 		var errV validation.Errors
 		switch {
 		case errors.As(err, &errBind):

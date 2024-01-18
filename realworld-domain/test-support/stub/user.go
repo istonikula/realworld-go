@@ -34,7 +34,7 @@ var UserStub = struct {
 	},
 	ValidateUserError: func(e domain.UserRegistrationError) domain.ValidateUserRegistration {
 		return func(domain.UserRegistration) (*domain.ValidUserRegistration, error) {
-			return nil, &e
+			return nil, e
 		}
 	},
 }

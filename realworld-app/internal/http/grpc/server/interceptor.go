@@ -78,7 +78,7 @@ func HandleError() grpc.UnaryServerInterceptor {
 			return
 		}
 
-		var errReg *domain.UserRegistrationError
+		var errReg domain.UserRegistrationError
 		var errV validation.Errors
 		switch {
 		case errors.As(err, &errReg):

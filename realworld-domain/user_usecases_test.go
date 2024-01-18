@@ -28,7 +28,7 @@ func TestRegisterUserUseCase(t *testing.T) {
 
 	t.Run("email already taken", func(t *testing.T) {
 		_, err := domain.RegisterUserUseCase{
-			Validate:   stub.UserStub.ValidateUserError(*domain.EmailAlreadyTaken),
+			Validate:   stub.UserStub.ValidateUserError(domain.EmailAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
 		}.Run(reg)
 		require.Equal(t, domain.EmailAlreadyTaken, err)
@@ -36,7 +36,7 @@ func TestRegisterUserUseCase(t *testing.T) {
 
 	t.Run("username already taken", func(t *testing.T) {
 		_, err := domain.RegisterUserUseCase{
-			Validate:   stub.UserStub.ValidateUserError(*domain.UsernameAlreadyTaken),
+			Validate:   stub.UserStub.ValidateUserError(domain.UsernameAlreadyTaken),
 			CreateUser: stub.UserStub.UnexpectedCreateUser,
 		}.Run(reg)
 		require.Equal(t, domain.UsernameAlreadyTaken, err)

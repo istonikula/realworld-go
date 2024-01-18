@@ -1,25 +1,21 @@
 package domain
 
-type UserRegistrationError struct {
-	Kind string
-}
+type UserRegistrationError string
 
-func (e *UserRegistrationError) Error() string { return e.Kind }
+func (e UserRegistrationError) Error() string { return string(e) }
 
-var (
-	EmailAlreadyTaken    = &UserRegistrationError{"email already taken"}
-	UsernameAlreadyTaken = &UserRegistrationError{"username already taken"}
+const (
+	EmailAlreadyTaken    = UserRegistrationError("email already taken")
+	UsernameAlreadyTaken = UserRegistrationError("username already taken")
 )
 
-type UserLoginError struct {
-	Kind string
-}
+type UserLoginError string
 
-func (e *UserLoginError) Error() string { return e.Kind }
+func (e UserLoginError) Error() string { return string(e) }
 
-var (
-	UserNotFound   = &UserLoginError{"user not found"}
-	BadCredentials = &UserLoginError{"bad credentials"}
+const (
+	UserNotFound   = UserLoginError("user not found")
+	BadCredentials = UserLoginError("bad credentials")
 )
 
 type RegisterUserUseCase struct {
